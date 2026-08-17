@@ -1,0 +1,61 @@
+# ============================================================
+# Real-Time Gaming Intelligence Platform
+# Services ajoutés brique par brique
+# ============================================================
+
+services:
+
+  # ── Brique 2 : Batch Ingestion ──────────────────────────
+  # ingestion:
+  #   build: .
+  #   command: python -m src.ingestion.igdb.ingest
+  #   env_file: .env
+
+  # ── Brique 3 : Kafka KRaft ─────────────────────────────
+  # kafka:
+  #   image: confluentinc/cp-kafka:latest
+  #   environment:
+  #     KAFKA_PROCESS_ROLES: broker,controller
+  #     KAFKA_NODE_ID: 1
+  #     ...
+
+  # ── Brique 4 : Spark Streaming ─────────────────────────
+  # spark-master:
+  #   image: bitnami/spark:latest
+  #   ...
+
+  # ── Brique 5 : Redis (live state) ──────────────────────
+  # redis:
+  #   image: redis:latest
+  #   ports:
+  #     - "6379:6379"
+
+  # ── Brique 9 : Neo4j Knowledge Graph ───────────────────
+  # neo4j:
+  #   image: neo4j:latest
+  #   ports:
+  #     - "7474:7474"
+  #     - "7687:7687"
+
+  # ── Brique 12 : Elasticsearch + Kibana ─────────────────
+  # elasticsearch:
+  #   image: elasticsearch:latest
+  # kibana:
+  #   image: kibana:latest
+
+  # ── Brique 14 : Prometheus + Grafana ───────────────────
+  # prometheus:
+  #   image: prom/prometheus:latest
+  # grafana:
+  #   image: grafana/grafana:latest
+
+  # ── Brique 16 : Sentinel AI ────────────────────────────
+  # ollama:
+  #   image: ollama/ollama:latest
+  #   ports:
+  #     - "11434:11434"
+
+  # Placeholder pour que docker-compose ne refuse pas un fichier vide
+  healthcheck:
+    image: busybox
+    command: echo "Platform scaffold ready"

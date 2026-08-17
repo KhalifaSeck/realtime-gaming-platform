@@ -1,0 +1,29 @@
+# Terraform state — contient secrets et infra réelle, JAMAIS dans git
+*.tfstate
+*.tfstate.*
+*.tfstate.backup
+
+# Répertoire de travail Terraform (providers téléchargés, cache)
+.terraform/
+.terraform.lock.hcl
+
+# Fichiers de variables — peuvent contenir des secrets (subscription_id, mots de passe)
+*.tfvars
+*.tfvars.json
+
+# Plans Terraform
+*.tfplan
+
+# Crash logs
+crash.log
+crash.*.log
+
+# Overrides locaux
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# CLI config
+.terraformrc
+terraform.rc

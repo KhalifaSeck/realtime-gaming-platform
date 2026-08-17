@@ -1,0 +1,53 @@
+# ============================================================
+# Real-Time Gaming Intelligence Platform — Python Dependencies
+# ============================================================
+
+# --- Ingestion ---
+requests
+httpx
+
+# --- Kafka ---
+confluent-kafka
+
+# --- Spark ---
+pyspark
+delta-spark
+
+# --- Snowflake ---
+snowflake-connector-python
+snowflake-sqlalchemy
+
+# --- Redis ---
+redis
+
+# --- Azure ---
+azure-storage-file-datalake
+azure-identity
+
+# --- API ---
+fastapi
+uvicorn
+prometheus-fastapi-instrumentator
+# --- Dashboard ---
+streamlit
+plotly
+
+# --- Neo4j ---
+neo4j
+
+# --- Elasticsearch ---
+elasticsearch
+
+# --- Sentinel AI (Agentic DataOps) ---
+langgraph
+anthropic
+
+# --- Utilities ---
+python-dotenv
+pydantic
+pydantic-settings
+loguru
+
+# --- Testing ---
+pytest>=8.3.0
+pytest-asyncio>=0.24.0
