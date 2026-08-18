@@ -1,21 +1,15 @@
-# ============================================================
-# Spark Structured Streaming image
-# Base : apache/spark 3.5 (Python + JVM + Spark preinstalles)
-# ============================================================
 FROM apache/spark:3.5.4-python3
 
 USER root
 
 WORKDIR /opt/spark/work-dir
 
-# Cache Ivy pour --packages
 RUN mkdir -p /home/spark/.ivy2/cache /home/spark/.ivy2/jars /home/spark/.ivy2/local \
  && chown -R spark:spark /home/spark
 
-# Deps Python additionnelles (redis-py pour sinks)
-RUN pip install --no-cache-dir redis
+# Deps Python (sinks Redis + ADLS)
+RUN pip install --no-cache-dir redis pandas pyarrow azure-storage-file-datalake
 
-# Copie du code
 COPY src/ ./src/
 RUN chown -R spark:spark /opt/spark/work-dir
 

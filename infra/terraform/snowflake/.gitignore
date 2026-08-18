@@ -1,0 +1,19 @@
+# Terraform state
+*.tfstate
+*.tfstate.*
+*.tfstate.backup
+
+# Cache / plugins
+.terraform/
+.terraform.lock.hcl
+
+# Values (contient password Snowflake)
+*.tfvars
+*.tfvars.json
+
+# Plans
+*.tfplan
+
+# CLI
+.terraformrc
+terraform.rc

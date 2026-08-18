@@ -1,16 +1,17 @@
-"""Query : sentiment par jeu par 30s -> Redis."""
+"""Query : sentiment par jeu par 30s -> Redis + ADLS."""
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import avg, col, count as _count, sum as _sum, when, window
 from pyspark.sql.streaming import StreamingQuery
 
 from src.kafka_reader import read_topic
 from src.schemas import REVIEW_SCHEMA
-from src.sinks.redis_sink import make_writer
+from src.sinks.adls_sink import make_writer as make_adls_writer
+from src.sinks.multi import combine
+from src.sinks.redis_sink import make_writer as make_redis_writer
 
 
 def start(spark: SparkSession) -> StreamingQuery:
     df = read_topic(spark, "reviews", REVIEW_SCHEMA)
-
     agg = (
         df.withWatermark("event_time", "10 seconds")
         .groupBy(
@@ -31,11 +32,14 @@ def start(spark: SparkSession) -> StreamingQuery:
             col("recommend_pct"),
         )
     )
-
     return (
         agg.writeStream
         .queryName("reviews_sentiment")
-        .foreachBatch(make_writer("reviews"))
+        .foreachBatch(combine(
+            make_redis_writer("reviews"),
+            make_adls_writer("reviews"),
+        ))
+        .option("checkpointLocation", "/tmp/checkpoints/reviews_sentiment")
         .outputMode("update")
         .trigger(processingTime="15 seconds")
         .start()
