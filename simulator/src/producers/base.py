@@ -8,10 +8,12 @@ un dict JSON-serializable. La classe s'occupe du reste :
   - keying par user_id (routing partition stable)
   - callback de delivery (log erreurs)
   - loop rate-controlled + flush propre a l'arret
+  - stop_event optionnel pour shutdown depuis un thread parent
 """
 from __future__ import annotations
 
 import json
+import threading
 import time
 from abc import ABC, abstractmethod
 from typing import Any
@@ -32,8 +34,8 @@ class BaseProducer(ABC):
         self._producer = Producer({
             "bootstrap.servers": settings.kafka_bootstrap_servers,
             "client.id": f"{settings.producer_client_id}-{self.topic}",
-            "linger.ms": 10,             # batch pendant 10ms max avant envoi
-            "compression.type": "snappy" # compression per-message
+            "linger.ms": 10,
+            "compression.type": "snappy",
         })
         self._sent = 0
 
@@ -55,11 +57,21 @@ class BaseProducer(ABC):
             on_delivery=self._delivery_report,
         )
         self._sent += 1
-        # poll(0) trigge les callbacks des envois precedents sans bloquer
         self._producer.poll(0)
 
-    def run(self, rate_per_second: float = 1.0, max_events: int | None = None) -> None:
-        """Loop : genere et envoie a un debit cible."""
+    def run(
+        self,
+        rate_per_second: float = 1.0,
+        max_events: int | None = None,
+        stop_event: threading.Event | None = None,
+    ) -> None:
+        """Loop : genere et envoie a un debit cible.
+
+        Arret sur :
+          - max_events atteint
+          - stop_event.set() depuis un thread parent
+          - KeyboardInterrupt (Ctrl+C direct dans le process)
+        """
         interval = 1.0 / rate_per_second
         log.info(
             "producer.start",
@@ -69,6 +81,8 @@ class BaseProducer(ABC):
         )
         try:
             while max_events is None or self._sent < max_events:
+                if stop_event is not None and stop_event.is_set():
+                    break
                 event = self.generate_event()
                 self.send_one(event)
                 if self._sent % 10 == 0:
@@ -77,6 +91,5 @@ class BaseProducer(ABC):
         except KeyboardInterrupt:
             log.info("producer.interrupted", topic=self.topic, sent=self._sent)
         finally:
-            # flush : bloque jusqu'a ce que tous les messages en buffer partent
             self._producer.flush(timeout=10)
             log.info("producer.done", topic=self.topic, sent=self._sent)
