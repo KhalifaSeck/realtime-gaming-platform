@@ -1,61 +1,118 @@
 # ============================================================
-# Real-Time Gaming Intelligence Platform
-# Services ajoutés brique par brique
+# Real-time gaming platform - services locaux (dev)
+#
+# Kafka en mode KRaft (sans Zookeeper), image officielle Apache.
+#
+# Services :
+#   - kafka       : Apache Kafka 3.9 KRaft (broker + controller combines)
+#   - kafka-init  : job one-shot qui cree les 4 topics
+#   - kafka-ui    : UI web (http://localhost:8080)
+#   - redis       : cache live state (Brique 5)
+#
+# Ports host :
+#   - Kafka       : localhost:9092
+#   - Kafka-UI    : http://localhost:8080
+#   - Redis       : localhost:6379
 # ============================================================
 
 services:
 
-  # ── Brique 2 : Batch Ingestion ──────────────────────────
-  # ingestion:
-  #   build: .
-  #   command: python -m src.ingestion.igdb.ingest
-  #   env_file: .env
+  # ── Kafka (KRaft) ─────────────────────────────────────────────────────────
+  kafka:
+    image: apache/kafka:3.9.0
+    container_name: rtg_kafka
+    restart: unless-stopped
+    ports:
+      - "9092:9092"
+    environment:
+      # --- Identite du node ---
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
 
-  # ── Brique 3 : Kafka KRaft ─────────────────────────────
-  # kafka:
-  #   image: confluentinc/cp-kafka:latest
-  #   environment:
-  #     KAFKA_PROCESS_ROLES: broker,controller
-  #     KAFKA_NODE_ID: 1
-  #     ...
+      # --- Listeners ---
+      # PLAINTEXT     : entre containers (kafka:29092)
+      # CONTROLLER    : quorum KRaft (interne)
+      # PLAINTEXT_HOST: depuis le laptop (localhost:9092)
+      KAFKA_LISTENERS: PLAINTEXT://:29092,CONTROLLER://:9093,PLAINTEXT_HOST://:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
 
-  # ── Brique 4 : Spark Streaming ─────────────────────────
-  # spark-master:
-  #   image: bitnami/spark:latest
-  #   ...
+      # --- Dev-friendly defaults (single-node) ---
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+    networks:
+      - rtg_network
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --list || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
 
-  # ── Brique 5 : Redis (live state) ──────────────────────
-  # redis:
-  #   image: redis:latest
-  #   ports:
-  #     - "6379:6379"
+  # ── Topic bootstrap (job one-shot) ────────────────────────────────────────
+  kafka-init:
+    image: apache/kafka:3.9.0
+    container_name: rtg_kafka_init
+    depends_on:
+      kafka:
+        condition: service_healthy
+    networks:
+      - rtg_network
+    entrypoint: ["/bin/bash", "-c"]
+    command:
+      - |
+        set -e
+        for topic in purchases reviews sessions wishlist; do
+          /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:29092 \
+            --create --if-not-exists \
+            --topic $$topic \
+            --partitions 3 --replication-factor 1
+        done
+        echo "Topics created :"
+        /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:29092 --list
 
-  # ── Brique 9 : Neo4j Knowledge Graph ───────────────────
-  # neo4j:
-  #   image: neo4j:latest
-  #   ports:
-  #     - "7474:7474"
-  #     - "7687:7687"
+  # ── Kafka UI ──────────────────────────────────────────────────────────────
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: rtg_kafka_ui
+    restart: unless-stopped
+    depends_on:
+      kafka:
+        condition: service_healthy
+    environment:
+      KAFKA_CLUSTERS_0_NAME: rtg-local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
+    ports:
+      - "8080:8080"
+    networks:
+      - rtg_network
 
-  # ── Brique 12 : Elasticsearch + Kibana ─────────────────
-  # elasticsearch:
-  #   image: elasticsearch:latest
-  # kibana:
-  #   image: kibana:latest
+  # ── Redis ─────────────────────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: rtg_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - rtg_redis_data:/data
+    networks:
+      - rtg_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
 
-  # ── Brique 14 : Prometheus + Grafana ───────────────────
-  # prometheus:
-  #   image: prom/prometheus:latest
-  # grafana:
-  #   image: grafana/grafana:latest
 
-  # ── Brique 16 : Sentinel AI ────────────────────────────
-  # ollama:
-  #   image: ollama/ollama:latest
-  #   ports:
-  #     - "11434:11434"
+networks:
+  rtg_network:
+    driver: bridge
 
-  # Placeholder pour que docker-compose ne refuse pas un fichier vide
-  healthcheck:
-    image: busybox
-    command: echo "Platform scaffold ready"
+volumes:
+  rtg_redis_data:
