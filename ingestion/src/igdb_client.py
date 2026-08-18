@@ -1,12 +1,8 @@
 """
 Client IGDB (Internet Game Database).
 
-- OAuth2 client credentials via Twitch (token caché en mémoire).
-- Requêtes en Apicalypse (langage IGDB, style SQL-ish).
-- Retry basique en cas d'erreur transitoire.
-
-Endpoints utiles : games, genres, platforms, companies, themes.
-Doc : https://api-docs.igdb.com/
+- OAuth2 client credentials via Twitch (token cache en memoire).
+- Requetes en Apicalypse.
 """
 from __future__ import annotations
 
@@ -16,7 +12,7 @@ from typing import Any
 import requests
 import structlog
 
-from config.settings import settings
+from config.settings import get_settings
 
 log = structlog.get_logger()
 
@@ -26,11 +22,11 @@ class IGDBClient:
     API_URL = "https://api.igdb.com/v4"
 
     def __init__(self) -> None:
+        self._settings = get_settings()
         self._token: str | None = None
         self._token_expires_at: float = 0.0
 
     def _get_token(self) -> str:
-        """Renvoie un token valide, en le rafraichissant si nécessaire."""
         if self._token and time.time() < self._token_expires_at - 60:
             return self._token
 
@@ -38,8 +34,8 @@ class IGDBClient:
         resp = requests.post(
             self.TOKEN_URL,
             params={
-                "client_id": settings.twitch_client_id,
-                "client_secret": settings.twitch_client_secret,
+                "client_id": self._settings.twitch_client_id,
+                "client_secret": self._settings.twitch_client_secret,
                 "grant_type": "client_credentials",
             },
             timeout=10,
@@ -52,10 +48,9 @@ class IGDBClient:
         return self._token
 
     def query(self, endpoint: str, body: str) -> list[dict[str, Any]]:
-        """Exécute une requête Apicalypse sur un endpoint IGDB."""
         token = self._get_token()
         headers = {
-            "Client-ID": settings.twitch_client_id,
+            "Client-ID": self._settings.twitch_client_id,
             "Authorization": f"Bearer {token}",
         }
         url = f"{self.API_URL}/{endpoint}"
@@ -65,7 +60,6 @@ class IGDBClient:
         return resp.json()
 
     def fetch_games(self, limit: int = 500, offset: int = 0) -> list[dict[str, Any]]:
-        """Récupère un batch de jeux (pagination via offset)."""
         body = (
             "fields name, first_release_date, rating, rating_count, "
             "genres, platforms, summary; "
@@ -74,7 +68,6 @@ class IGDBClient:
         return self.query("games", body)
 
 
-# ---------- Self-test : `python -m src.igdb_client` depuis ingestion/ ----------
 if __name__ == "__main__":
     import json
 
