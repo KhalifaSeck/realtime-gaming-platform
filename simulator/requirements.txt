@@ -1,0 +1,5 @@
+confluent-kafka
+faker
+pydantic-settings
+python-dotenv
+structlog
