@@ -1,10 +1,11 @@
-"""Query : sentiment (nb reviews + avg rating + % recommand) par jeu par 30s."""
+"""Query : sentiment par jeu par 30s -> Redis."""
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import avg, col, count as _count, sum as _sum, when, window
 from pyspark.sql.streaming import StreamingQuery
 
 from src.kafka_reader import read_topic
 from src.schemas import REVIEW_SCHEMA
+from src.sinks.redis_sink import make_writer
 
 
 def start(spark: SparkSession) -> StreamingQuery:
@@ -34,8 +35,7 @@ def start(spark: SparkSession) -> StreamingQuery:
     return (
         agg.writeStream
         .queryName("reviews_sentiment")
-        .format("console")
-        .option("truncate", "false")
+        .foreachBatch(make_writer("reviews"))
         .outputMode("update")
         .trigger(processingTime="15 seconds")
         .start()

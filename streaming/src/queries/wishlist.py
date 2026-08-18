@@ -1,10 +1,11 @@
-"""Query : wishlist net (ajouts - suppressions) par jeu par 30s."""
+"""Query : wishlist net par jeu par 30s -> Redis."""
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import col, sum as _sum, when, window
 from pyspark.sql.streaming import StreamingQuery
 
 from src.kafka_reader import read_topic
 from src.schemas import WISHLIST_SCHEMA
+from src.sinks.redis_sink import make_writer
 
 
 def start(spark: SparkSession) -> StreamingQuery:
@@ -33,8 +34,7 @@ def start(spark: SparkSession) -> StreamingQuery:
     return (
         agg.writeStream
         .queryName("wishlist_net")
-        .format("console")
-        .option("truncate", "false")
+        .foreachBatch(make_writer("wishlist"))
         .outputMode("update")
         .trigger(processingTime="15 seconds")
         .start()

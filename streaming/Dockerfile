@@ -8,15 +8,17 @@ USER root
 
 WORKDIR /opt/spark/work-dir
 
-# Cache Ivy (obligatoire pour --packages ; non cree par defaut dans l'image)
+# Cache Ivy pour --packages
 RUN mkdir -p /home/spark/.ivy2/cache /home/spark/.ivy2/jars /home/spark/.ivy2/local \
  && chown -R spark:spark /home/spark
 
-# Copie du code Python
+# Deps Python additionnelles (redis-py pour sinks)
+RUN pip install --no-cache-dir redis
+
+# Copie du code
 COPY src/ ./src/
 RUN chown -R spark:spark /opt/spark/work-dir
 
-# PYTHONPATH : autorise 'from src.xxx import ...' dans les scripts
 ENV PYTHONPATH=/opt/spark/work-dir
 
 USER spark

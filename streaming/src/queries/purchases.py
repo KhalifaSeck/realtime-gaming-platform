@@ -1,10 +1,11 @@
-"""Query : revenu net + nb achats par jeu par fenetre 30s."""
+"""Query : revenu net + nb achats par jeu par fenetre 30s -> Redis."""
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import col, count as _count, sum as _sum, window
 from pyspark.sql.streaming import StreamingQuery
 
 from src.kafka_reader import read_topic
 from src.schemas import PURCHASE_SCHEMA
+from src.sinks.redis_sink import make_writer
 
 
 def start(spark: SparkSession) -> StreamingQuery:
@@ -37,8 +38,7 @@ def start(spark: SparkSession) -> StreamingQuery:
     return (
         agg.writeStream
         .queryName("purchases_revenue")
-        .format("console")
-        .option("truncate", "false")
+        .foreachBatch(make_writer("purchases"))
         .outputMode("update")
         .trigger(processingTime="15 seconds")
         .start()
