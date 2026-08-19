@@ -1,9 +1,4 @@
-"""
-Client IGDB (Internet Game Database).
-
-- OAuth2 client credentials via Twitch (token cache en memoire).
-- Requetes en Apicalypse.
-"""
+"""Client IGDB (Internet Game Database) - auth OAuth2 Twitch."""
 from __future__ import annotations
 
 import time
@@ -29,7 +24,6 @@ class IGDBClient:
     def _get_token(self) -> str:
         if self._token and time.time() < self._token_expires_at - 60:
             return self._token
-
         log.info("igdb.token.fetch")
         resp = requests.post(
             self.TOKEN_URL,
@@ -54,12 +48,13 @@ class IGDBClient:
             "Authorization": f"Bearer {token}",
         }
         url = f"{self.API_URL}/{endpoint}"
-        log.info("igdb.query", endpoint=endpoint, body=body)
+        log.info("igdb.query", endpoint=endpoint, body=body[:120])
         resp = requests.post(url, headers=headers, data=body, timeout=30)
         resp.raise_for_status()
         return resp.json()
 
     def fetch_games(self, limit: int = 500, offset: int = 0) -> list[dict[str, Any]]:
+        """Fetch minimal (utilise par les anciens tests)."""
         body = (
             "fields name, first_release_date, rating, rating_count, "
             "genres, platforms, summary; "
@@ -67,11 +62,21 @@ class IGDBClient:
         )
         return self.query("games", body)
 
+    def fetch_games_enriched(self, limit: int = 500, offset: int = 0) -> list[dict[str, Any]]:
+        """Fetch avec expander syntax : resout genres/themes/platforms/keywords/
+        game_modes/involved_companies.company en 1 seule requete (pas de joins Python)."""
+        body = (
+            "fields name, summary, rating, rating_count, first_release_date, "
+            "genres.name, themes.name, platforms.name, keywords.name, game_modes.name, "
+            "involved_companies.company.name, "
+            "involved_companies.developer, involved_companies.publisher; "
+            f"limit {limit}; offset {offset};"
+        )
+        return self.query("games", body)
+
 
 if __name__ == "__main__":
     import json
-
     client = IGDBClient()
-    games = client.fetch_games(limit=5)
+    games = client.fetch_games_enriched(limit=3)
     print(json.dumps(games, indent=2, ensure_ascii=False))
-    print(f"\n✅ Fetched {len(games)} games from IGDB")

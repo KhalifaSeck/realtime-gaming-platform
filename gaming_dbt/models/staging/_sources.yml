@@ -1,0 +1,28 @@
+version: 2
+
+sources:
+  - name: raw
+    database: RTGAMING_DEV
+    schema: RAW
+    tables:
+      - name: igdb_games
+        columns:
+          - name: igdb_id
+            tests: [not_null, unique]
+      - name: steamspy_games
+        columns:
+          - name: appid
+            tests: [not_null, unique]
+      - name: stream_purchases
+      - name: stream_reviews
+      - name: stream_sessions
+      - name: stream_wishlist
+
+  - name: analytics
+    database: RTGAMING_DEV
+    schema: ANALYTICS
+    tables:
+      - name: stream_purchases_agg
+      - name: stream_reviews_agg
+      - name: stream_sessions_agg
+      - name: stream_wishlist_agg

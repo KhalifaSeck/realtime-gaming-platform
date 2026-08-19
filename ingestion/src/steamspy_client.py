@@ -1,14 +1,7 @@
-"""
-Client SteamSpy - API publique, pas d'auth.
-
-Endpoint principal : ?request=all&page=<N> -> top 1000 jeux Steam
-sortes par owners, paginés (1000 par page).
-
-Doc : https://steamspy.com/api.php
-Rate limit : 1 req/sec pour 'all', 4 req/sec pour les autres endpoints.
-"""
+"""Client SteamSpy - API publique, pas d'auth."""
 from __future__ import annotations
 
+import time
 from typing import Any
 
 import requests
@@ -19,28 +12,51 @@ log = structlog.get_logger()
 
 class SteamSpyClient:
     BASE_URL = "https://steamspy.com/api.php"
+    APPDETAILS_SLEEP = 0.25  # rate limit ~4 req/sec
 
     def _get(self, params: dict[str, Any]) -> Any:
-        log.info("steamspy.query", params=params)
         resp = requests.get(self.BASE_URL, params=params, timeout=30)
         resp.raise_for_status()
         return resp.json()
 
     def fetch_top_games(self, page: int = 0) -> list[dict[str, Any]]:
-        """Top 1000 jeux par nombre de owners. Retourne une liste de dicts."""
+        """Top 1000 par owners (1 seule requete)."""
+        log.info("steamspy.top.fetch", page=page)
         data = self._get({"request": "all", "page": page})
-        # SteamSpy renvoie un dict {appid: {info}}. On aplatit en liste.
         return [{"appid": int(appid), **info} for appid, info in data.items()]
 
     def fetch_app_details(self, appid: int) -> dict[str, Any]:
-        """Details enrichis d'un jeu unique."""
         return self._get({"request": "appdetails", "appid": appid})
+
+    def fetch_top_games_enriched(
+        self,
+        page: int = 0,
+        enrich_details: bool = True,
+    ) -> list[dict[str, Any]]:
+        """Fetch top games + enrichit chacun avec tags/languages/genre via appdetails."""
+        games = self.fetch_top_games(page)
+        if not enrich_details:
+            return games
+
+        log.info("steamspy.enrich.start", n=len(games))
+        for i, game in enumerate(games):
+            try:
+                details = self.fetch_app_details(game["appid"])
+                for k in ("tags", "languages", "genre"):
+                    if details.get(k):
+                        game[k] = details[k]
+            except Exception as e:  # noqa: BLE001
+                log.warning("steamspy.appdetails.failed", appid=game["appid"], error=str(e))
+            if (i + 1) % 50 == 0:
+                log.info("steamspy.enrich.progress", done=i + 1, total=len(games))
+            time.sleep(self.APPDETAILS_SLEEP)
+        log.info("steamspy.enrich.done", enriched=len(games))
+        return games
 
 
 if __name__ == "__main__":
     import json
-
     client = SteamSpyClient()
-    games = client.fetch_top_games(page=0)
+    games = client.fetch_top_games_enriched(page=0, enrich_details=True)
     print(json.dumps(games[:3], indent=2, ensure_ascii=False))
-    print(f"\n✅ Fetched {len(games)} games from SteamSpy")
+    print(f"\nFetched + enriched {len(games)} games")

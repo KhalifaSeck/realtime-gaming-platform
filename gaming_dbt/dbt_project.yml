@@ -1,0 +1,29 @@
+# ============================================================
+# gaming_dbt - dbt project config
+# ============================================================
+
+name: 'gaming_dbt'
+version: '1.0.0'
+config-version: 2
+
+profile: 'gaming_dbt'
+
+model-paths: ["models"]
+analysis-paths: ["analyses"]
+test-paths: ["tests"]
+seed-paths: ["seeds"]
+macro-paths: ["macros"]
+snapshot-paths: ["snapshots"]
+
+clean-targets:
+  - "target"
+  - "dbt_packages"
+
+models:
+  gaming_dbt:
+    staging:
+      +materialized: view
+      +schema: STAGING
+    marts:
+      +materialized: table
+      +schema: ANALYTICS
