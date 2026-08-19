@@ -1,0 +1,4 @@
+snowflake-connector-python
+pydantic-settings
+python-dotenv
+structlog

@@ -3,7 +3,7 @@
 #
 # Cree :
 #   - Database : RTGAMING_DEV
-#   - Schemas  : RAW, STAGING, MARTS (medallion)
+#   - Schemas  : RAW, STAGING, ANALYTICS (medallion)
 #   - Role     : RTGAMING_DEV_ROLE (least-privilege pour dbt/apps)
 #   - Grants   : USAGE sur DB/WH, tout sur schemas (existants + futurs)
 #   - Attribution du role a l'user Terraform
@@ -33,12 +33,12 @@ resource "snowflake_schema" "staging" {
   comment  = "Cleaned and typed tables (dbt staging models)"
 }
 
-resource "snowflake_schema" "marts" {
-  database = snowflake_database.main.name
-  name     = "MARTS"
-  comment  = "Business-ready analytics tables (dbt marts, Power BI)"
-}
 
+resource "snowflake_schema" "analytics" {
+  database = snowflake_database.main.name
+  name     = "ANALYTICS"
+  comment  = "Aggregated analytics tables (Spark streaming + batch outputs)"
+}
 # ---------- Role custom ----------
 resource "snowflake_account_role" "pipeline" {
   name    = local.role_name
@@ -86,7 +86,7 @@ resource "snowflake_grant_privileges_to_account_role" "schemas_all" {
   depends_on = [
     snowflake_schema.raw,
     snowflake_schema.staging,
-    snowflake_schema.marts,
+    snowflake_schema.analytics,
   ]
 }
 
@@ -110,4 +110,29 @@ resource "snowflake_grant_privileges_to_account_role" "schemas_future" {
 resource "snowflake_grant_account_role" "to_user" {
   role_name = snowflake_account_role.pipeline.name
   user_name = var.snowflake_user
+}
+
+# ============================================================
+# File Format + External Stage vers ADLS Gen2
+# ============================================================
+
+resource "snowflake_file_format" "parquet_snappy" {
+  database    = snowflake_database.main.name
+  schema      = snowflake_schema.raw.name
+  name        = "PARQUET_SNAPPY"
+  format_type = "PARQUET"
+  comment     = "Parquet with Snappy compression (matches Spark output)"
+}
+
+resource "snowflake_stage" "adls_raw" {
+  database = snowflake_database.main.name
+  schema   = snowflake_schema.raw.name
+  name     = "ADLS_RAW"
+  comment  = "External stage pointing to ADLS Gen2 raw container"
+
+  # Note : URL utilise .blob.core.windows.net (API Blob) meme si HNS active.
+  # C'est le format supporte par Snowflake CREATE STAGE.
+  url         = "azure://${var.adls_account_name}.blob.core.windows.net/${var.adls_container_raw}"
+  credentials = "AZURE_SAS_TOKEN='${var.adls_sas_token}'"
+  file_format = "FORMAT_NAME = ${snowflake_database.main.name}.${snowflake_schema.raw.name}.${snowflake_file_format.parquet_snappy.name}"
 }

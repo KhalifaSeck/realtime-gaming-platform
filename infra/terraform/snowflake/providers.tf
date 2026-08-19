@@ -6,4 +6,9 @@ provider "snowflake" {
   role              = var.snowflake_role
   warehouse         = var.snowflake_warehouse
   authenticator     = "SNOWFLAKE"
+
+  preview_features_enabled = [
+    "snowflake_file_format_resource",
+    "snowflake_stage_resource",
+  ]
 }

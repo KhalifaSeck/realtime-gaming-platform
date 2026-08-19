@@ -53,3 +53,21 @@ variable "snowflake_warehouse" {
   type        = string
   default     = "COMPUTE_WH"
 }
+
+# ---------- ADLS Gen2 (source des Parquet) ----------
+variable "adls_account_name" {
+  description = "Nom du storage account ADLS Gen2 (depuis 'terraform -chdir=infra/terraform/azure output -raw adls_account_name')."
+  type        = string
+}
+
+variable "adls_container_raw" {
+  description = "Nom du container ADLS ou Spark ecrit les Parquet."
+  type        = string
+  default     = "raw"
+}
+
+variable "adls_sas_token" {
+  description = "SAS token ADLS (read + list). Genere via 'az storage account generate-sas'."
+  type        = string
+  sensitive   = true
+}
