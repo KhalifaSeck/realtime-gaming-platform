@@ -1,8 +1,13 @@
 """
 Writer : liste de dicts -> Parquet en memoire -> upload direct ADLS Gen2.
+
+Auth ADLS :
+  - Si env ADLS_ACCOUNT_KEY est set -> SharedKeyCredential (container-friendly)
+  - Sinon -> DefaultAzureCredential (utilise 'az login' en dev host)
 """
 from __future__ import annotations
 
+import os
 from datetime import date
 from io import BytesIO
 from typing import Any
@@ -20,10 +25,17 @@ log = structlog.get_logger()
 def _adls_client() -> DataLakeServiceClient:
     settings = get_settings()
     account_url = f"https://{settings.adls_account_name}.dfs.core.windows.net"
+    account_key = os.environ.get("ADLS_ACCOUNT_KEY")
+    if account_key:
+        return DataLakeServiceClient(account_url=account_url, credential=account_key)
     return DataLakeServiceClient(
         account_url=account_url,
         credential=DefaultAzureCredential(),
     )
+
+
+def _upload_to_adls(local_path, source, ingest_date):
+    pass  # unused (kept for compat)
 
 
 def write_parquet(
@@ -38,7 +50,6 @@ def write_parquet(
         return ""
 
     df = pd.DataFrame(records)
-
     buffer = BytesIO()
     df.to_parquet(buffer, engine="pyarrow", compression="snappy", index=False)
     buffer.seek(0)
@@ -46,10 +57,8 @@ def write_parquet(
 
     settings = get_settings()
     remote_path = f"{source}/date={ingest_date.isoformat()}/{source}.parquet"
-    service = _adls_client()
-    fs = service.get_file_system_client(settings.adls_container_raw)
-    file_client = fs.get_file_client(remote_path)
-    file_client.upload_data(buffer, overwrite=True)
+    fs = _adls_client().get_file_system_client(settings.adls_container_raw)
+    fs.get_file_client(remote_path).upload_data(buffer, overwrite=True)
 
     log.info(
         "writer.adls.done",

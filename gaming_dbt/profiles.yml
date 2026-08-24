@@ -1,0 +1,16 @@
+# Profiles project-local (lit env vars). Gitignore-friendly.
+# Utilise par Airflow via DBT_PROFILES_DIR=/opt/airflow/project/gaming_dbt
+# Sur host dev tu continues d'utiliser ~/.dbt/profiles.yml.
+gaming_dbt:
+  target: dev
+  outputs:
+    dev:
+      type: snowflake
+      account: "{{ env_var('SNOWFLAKE_ACCOUNT') }}"
+      user: "{{ env_var('SNOWFLAKE_USER') }}"
+      password: "{{ env_var('SNOWFLAKE_PASSWORD') }}"
+      role: "{{ env_var('SNOWFLAKE_ROLE', 'ACCOUNTADMIN') }}"
+      warehouse: "{{ env_var('SNOWFLAKE_WAREHOUSE', 'COMPUTE_WH') }}"
+      database: RTGAMING_DEV
+      schema: STAGING
+      threads: 4

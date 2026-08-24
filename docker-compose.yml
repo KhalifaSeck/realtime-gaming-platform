@@ -108,6 +108,29 @@ services:
       interval: 10s
       timeout: 3s
       retries: 5
+    
+      # ── Neo4j Knowledge Graph ─────────────────────────────────────────────────
+  neo4j:
+    image: neo4j:5.18
+    container_name: rtg_neo4j
+    restart: unless-stopped
+    environment:
+      - NEO4J_AUTH=neo4j/rtgaming2026
+      - NEO4J_PLUGINS=["apoc","graph-data-science"]
+      - NEO4J_dbms_memory_heap_max__size=512m
+      - NEO4J_dbms_memory_pagecache_size=256m
+    ports:
+      - "7474:7474"    # HTTP browser
+      - "7687:7687"    # Bolt (drivers)
+    volumes:
+      - rtg_neo4j_data:/data
+    networks:
+      - rtg_network
+    healthcheck:
+      test: ["CMD-SHELL", "wget -O /dev/null -q http://localhost:7474 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
 
 
 networks:
@@ -116,3 +139,4 @@ networks:
 
 volumes:
   rtg_redis_data:
+  rtg_neo4j_data:

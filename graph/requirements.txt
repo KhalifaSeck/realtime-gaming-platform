@@ -1,0 +1,6 @@
+neo4j
+snowflake-connector-python
+pandas
+pydantic-settings
+python-dotenv
+structlog
