@@ -1,0 +1,9 @@
+fastapi
+uvicorn[standard]
+snowflake-connector-python
+redis
+neo4j
+pydantic-settings
+python-dotenv
+structlog
+prometheus-fastapi-instrumentator
