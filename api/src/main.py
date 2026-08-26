@@ -336,6 +336,38 @@ def price_stats():
     """
     return {"results": snowflake_query(sql)}
 
+# ============================================================
+# 14. GET /live/stats/{topic}/{game_id}
+# ============================================================
+@app.get("/live/stats/{topic}/{game_id}", tags=["live"])
+def live_stat(topic: str, game_id: int):
+    """
+    Renvoie le HASH Redis stat:{topic}:{game_id}
+    topic in {purchases, reviews, sessions, wishlist}
+    """
+    if topic not in {"purchases", "reviews", "sessions", "wishlist"}:
+        raise HTTPException(400, f"Unknown topic '{topic}'. Use: purchases, reviews, sessions, wishlist.")
+    key = f"stat:{topic}:{game_id}"
+    data = redis_client().hgetall(key)
+    if not data:
+        raise HTTPException(404, f"No live stat for {key}")
+    return {"key": key, "data": data}
+
+
+# ============================================================
+# 15. GET /live/all-stats
+# ============================================================
+@app.get("/live/all-stats", tags=["live"])
+def live_all_stats(
+    topic: str | None = Query(default=None, description="Filter par topic"),
+    limit: int = Query(default=100, ge=1, le=500),
+):
+    """Scan Redis stat:* et renvoie tous les hashes (paginated)."""
+    r = redis_client()
+    pattern = f"stat:{topic}:*" if topic else "stat:*"
+    keys = list(r.scan_iter(match=pattern, count=200))[:limit]
+    results = [{"key": k, "data": r.hgetall(k)} for k in keys]
+    return {"count": len(results), "pattern": pattern, "results": results}
 
 if __name__ == "__main__":
     import uvicorn

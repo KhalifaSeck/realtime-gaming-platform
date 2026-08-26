@@ -18,7 +18,7 @@ try {
 
     # 2. SteamSpy ingestion (--enrich-limit 500 pour ~3 min)
     Log-Step "2/5 - SteamSpy ingestion"
-    python -m src.main --source steamspy --enrich-limit 500
+    python -m src.main --source steamspy --enrich-limit 5000
 
     # 3. COPY INTO batch
     Log-Step "3/5 - COPY INTO batch (RAW.IGDB_GAMES + RAW.STEAMSPY_GAMES)"

@@ -1,0 +1,6 @@
+streamlit
+httpx
+pandas
+plotly
+pydantic-settings
+python-dotenv
