@@ -3,9 +3,9 @@ import httpx
 import streamlit as st
 
 from styles import inject_css
+import os
 
-
-SENTINEL_URL = "http://localhost:8888"
+SENTINEL_URL = os.environ.get("SENTINEL_URL", "http://localhost:8888")
 
 st.set_page_config(page_title="Sentinel AI", page_icon="🤖", layout="wide")
 inject_css()

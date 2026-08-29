@@ -199,7 +199,44 @@ services:
       - rtg_network
     depends_on:
       - prometheus
-      
+    # ── Sentinel AI ────────────────────────────────────────────────────────────
+  sentinel:
+    build: ./sentinel
+    image: rtgaming-sentinel:dev
+    container_name: rtg_sentinel
+    restart: unless-stopped
+    ports:
+      - "8888:8888"
+    environment:
+      API_BASE_URL: http://api:8000
+      # Ollama tourne sur le host Windows -> host.docker.internal
+      OLLAMA_BASE_URL: http://host.docker.internal:11434
+      LLM_MODEL: qwen3:1.7b
+      LLM_TEMPERATURE: "0.1"
+    depends_on:
+      - api
+    networks:
+      - rtg_network
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  # ── Streamlit Dashboard ────────────────────────────────────────────────────
+  dashboard:
+    build: ./dashboard
+    image: rtgaming-dashboard:dev
+    container_name: rtg_dashboard
+    restart: unless-stopped
+    ports:
+      - "8501:8501"
+    environment:
+      API_BASE_URL: http://api:8000
+      SENTINEL_URL: http://sentinel:8888
+    depends_on:
+      - api
+      - sentinel
+    networks:
+      - rtg_network
+
 networks:
   rtg_network:
     driver: bridge
