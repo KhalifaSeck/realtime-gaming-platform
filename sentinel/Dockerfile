@@ -1,10 +1,7 @@
-# ============================================================
-# Sentinel AI - LangGraph agent (Ollama + Qwen3)
-# ============================================================
 FROM python:3.11-slim
 
 LABEL org.opencontainers.image.title="rtgaming-sentinel"
-LABEL org.opencontainers.image.description="LangGraph AI agent over rtgaming platform"
+LABEL org.opencontainers.image.description="LangGraph agent over rtgaming platform"
 
 RUN groupadd -r sentinel && useradd -r -g sentinel -m -d /home/sentinel sentinel
 
