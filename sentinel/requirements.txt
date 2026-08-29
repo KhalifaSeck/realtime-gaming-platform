@@ -1,0 +1,8 @@
+langchain
+langchain-ollama
+langgraph
+httpx
+pydantic-settings
+python-dotenv
+structlog
+rich
