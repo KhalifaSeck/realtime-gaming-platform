@@ -6,3 +6,5 @@ pydantic-settings
 python-dotenv
 structlog
 rich
+fastapi
+uvicorn[standard]
