@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rtgaming-dashboard
+  namespace: rtgaming
+  labels:
+    app: rtgaming-dashboard
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rtgaming-dashboard
+  template:
+    metadata:
+      labels:
+        app: rtgaming-dashboard
+    spec:
+      containers:
+        - name: dashboard
+          image: rtgamingdevacrmdid1l.azurecr.io/rtgaming-dashboard:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8501
+              name: http
+          env:
+            - name: API_BASE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: rtgaming-config
+                  key: API_BASE_URL
+            - name: SENTINEL_URL
+              value: "http://rtgaming-sentinel.rtgaming.svc.cluster.local:8888"
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi

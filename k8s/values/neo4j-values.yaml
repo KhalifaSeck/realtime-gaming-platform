@@ -1,0 +1,25 @@
+neo4j:
+  name: rtg-neo4j
+  password: rtgaming2026
+  edition: community
+  acceptLicenseAgreement: "yes"
+
+  resources:
+    cpu: "500m"
+    memory: "2Gi"
+
+volumes:
+  data:
+    mode: defaultStorageClass
+    defaultStorageClass:
+      requests:
+        storage: 5Gi
+
+services:
+  neo4j:
+    enabled: true
+    spec:
+      type: ClusterIP
+
+env:
+  NEO4J_PLUGINS: '["apoc","graph-data-science"]'

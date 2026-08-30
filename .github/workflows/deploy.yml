@@ -1,0 +1,77 @@
+name: Build & Deploy to AKS
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'api/**'
+      - 'dashboard/**'
+      - 'sentinel/**'
+      - 'ingestion/**'
+      - 'streaming/**'
+      - 'simulator/**'
+      - 'k8s/**'
+      - '.github/workflows/**'
+  workflow_dispatch:
+
+env:
+  ACR_LOGIN_SERVER: rtgamingdevacrmdid1l.azurecr.io
+  NAMESPACE: rtgaming
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service:
+          - { name: api, context: ./api, dockerfile: ./api/Dockerfile }
+          - { name: dashboard, context: ./dashboard, dockerfile: ./dashboard/Dockerfile }
+          - { name: sentinel, context: ./sentinel, dockerfile: ./sentinel/Dockerfile }
+          - { name: ingestion, context: ./ingestion, dockerfile: ./ingestion/Dockerfile }
+          - { name: streaming, context: ./streaming, dockerfile: ./streaming/Dockerfile }
+          - { name: simulator, context: ./simulator, dockerfile: ./simulator/Dockerfile }
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Login to ACR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.ACR_LOGIN_SERVER }}
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
+
+      - name: Build & push ${{ matrix.service.name }}
+        run: |
+          docker build \
+            -t ${{ env.ACR_LOGIN_SERVER }}/${{ matrix.service.name }}:${{ github.sha }} \
+            -t ${{ env.ACR_LOGIN_SERVER }}/${{ matrix.service.name }}:latest \
+            -f ${{ matrix.service.dockerfile }} ${{ matrix.service.context }}
+          docker push ${{ env.ACR_LOGIN_SERVER }}/${{ matrix.service.name }}:${{ github.sha }}
+          docker push ${{ env.ACR_LOGIN_SERVER }}/${{ matrix.service.name }}:latest
+
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup kubeconfig
+        run: |
+          mkdir -p $HOME/.kube
+          echo "${{ secrets.KUBE_CONFIG }}" | base64 -d > $HOME/.kube/config
+          chmod 600 $HOME/.kube/config
+
+      - name: Apply manifests
+        run: kubectl apply -f k8s/manifests/ -n ${{ env.NAMESPACE }}
+
+      - name: Rollout restart deployments
+        run: |
+          kubectl rollout restart deployment/rtgaming-api -n ${{ env.NAMESPACE }}
+          kubectl rollout restart deployment/rtgaming-dashboard -n ${{ env.NAMESPACE }}
+          kubectl rollout restart deployment/rtgaming-sentinel -n ${{ env.NAMESPACE }}
+
+      - name: Wait for rollouts
+        run: |
+          kubectl rollout status deployment/rtgaming-api -n ${{ env.NAMESPACE }} --timeout=5m
+          kubectl rollout status deployment/rtgaming-dashboard -n ${{ env.NAMESPACE }} --timeout=5m
+          kubectl rollout status deployment/rtgaming-sentinel -n ${{ env.NAMESPACE }} --timeout=5m

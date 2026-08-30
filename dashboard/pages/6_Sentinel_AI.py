@@ -66,9 +66,9 @@ if prompt:
 
     # Call Sentinel
     with st.chat_message("assistant", avatar="🤖"):
-        with st.spinner("Sentinel is analyzing..."):
+        with st.spinner("Sentinel is thinking (may take up to 5min on CPU)..."):
             try:
-                r = httpx.post(f"{SENTINEL_URL}/ask", json={"question": prompt}, timeout=120.0)
+                r = httpx.post(f"{SENTINEL_URL}/ask", json={"question": prompt}, timeout=600.0)
                 r.raise_for_status()
                 answer = r.json()["answer"]
                 st.markdown(answer)

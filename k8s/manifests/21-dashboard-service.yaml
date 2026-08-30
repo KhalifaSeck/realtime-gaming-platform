@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: rtgaming-dashboard
+  namespace: rtgaming
+  labels:
+    app: rtgaming-dashboard
+spec:
+  type: LoadBalancer   # <-- Azure va provisionner une IP publique
+  selector:
+    app: rtgaming-dashboard
+  ports:
+    - port: 80         # port externe
+      targetPort: 8501 # port interne du container
+      name: http

@@ -5,7 +5,7 @@ __pycache__/
 
 # C extensions
 *.so
-
+k8s/manifests/02-secret.yaml
 # Distribution / packaging
 .Python
 build/
@@ -216,3 +216,7 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+kubeconfig.yaml
+
+kubeconfig.yaml

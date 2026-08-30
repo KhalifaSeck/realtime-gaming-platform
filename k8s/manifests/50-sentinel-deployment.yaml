@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rtgaming-sentinel
+  namespace: rtgaming
+  labels:
+    app: rtgaming-sentinel
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rtgaming-sentinel
+  template:
+    metadata:
+      labels:
+        app: rtgaming-sentinel
+    spec:
+      containers:
+        - name: sentinel
+          image: rtgamingdevacrmdid1l.azurecr.io/rtgaming-sentinel:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8888
+              name: http
+          env:
+            - name: OLLAMA_BASE_URL
+              value: "http://ollama.rtgaming.svc.cluster.local:11434"
+            - name: OLLAMA_MODEL
+              value: "qwen3:4b"
+            - name: API_BASE_URL
+              value: "http://rtgaming-api.rtgaming.svc.cluster.local:8000"
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8888
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 10

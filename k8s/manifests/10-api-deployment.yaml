@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rtgaming-api
+  namespace: rtgaming
+  labels:
+    app: rtgaming-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rtgaming-api
+  template:
+    metadata:
+      labels:
+        app: rtgaming-api
+    spec:
+      containers:
+        - name: api
+          image: rtgamingdevacrmdid1l.azurecr.io/rtgaming-api:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8000
+              name: http
+          envFrom:
+            - configMapRef:
+                name: rtgaming-config
+            - secretRef:
+                name: rtgaming-secrets
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 15
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 60
+            periodSeconds: 60
+            timeoutSeconds: 15
+            failureThreshold: 5
