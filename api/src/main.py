@@ -371,63 +371,87 @@ def live_all_stats(
 # ============================================================
 # HISTORY endpoints (Snowflake ANALYTICS.STREAM_*_AGG)
 # ============================================================
+# ============================================================
+# HISTORY endpoints (Snowflake ANALYTICS.STREAM_*_AGG)
+# Params : granularity (hour|day|week|month|year) + days (1..730)
+# ============================================================
+
+_GRANULARITIES = {"hour", "day", "week", "month", "year"}
+
+def _trunc(gran: str) -> str:
+    """Retourne la partie SQL DATE_TRUNC selon granularite."""
+    if gran not in _GRANULARITIES:
+        gran = "hour"
+    return f"DATE_TRUNC('{gran}', window_start)"
+
 @app.get("/history/purchases", tags=["history"])
-def history_purchases(hours: int = Query(default=24, ge=1, le=168)):
+def history_purchases(
+    granularity: str = Query(default="hour", pattern="^(hour|day|week|month|year)$"),
+    days: int = Query(default=1, ge=1, le=730),
+):
+    trunc = _trunc(granularity)
     sql = f"""
         SELECT
-            DATE_TRUNC('hour', window_start) AS hour,
+            {trunc} AS bucket,
             SUM(num_purchases) AS purchases,
             SUM(revenue_net_usd) AS revenue
         FROM ANALYTICS.STREAM_PURCHASES_AGG
-        WHERE window_start >= DATEADD(hour, -{hours}, CURRENT_TIMESTAMP)
+        WHERE window_start >= DATEADD(day, -{days}, CURRENT_TIMESTAMP)
         GROUP BY 1
         ORDER BY 1
     """
     return snowflake_query(sql)
-
-
 @app.get("/history/reviews", tags=["history"])
-def history_reviews(hours: int = Query(default=24, ge=1, le=168)):
+def history_reviews(
+    granularity: str = Query(default="hour", pattern="^(hour|day|week|month|year)$"),
+    days: int = Query(default=1, ge=1, le=730),
+):
+    trunc = _trunc(granularity)
     sql = f"""
         SELECT
-            DATE_TRUNC('hour', window_start) AS hour,
+            {trunc} AS bucket,
             SUM(num_reviews) AS reviews,
             AVG(avg_rating) AS avg_rating,
             AVG(recommend_pct) AS avg_recommend_pct
         FROM ANALYTICS.STREAM_REVIEWS_AGG
-        WHERE window_start >= DATEADD(hour, -{hours}, CURRENT_TIMESTAMP)
+        WHERE window_start >= DATEADD(day, -{days}, CURRENT_TIMESTAMP)
         GROUP BY 1
         ORDER BY 1
     """
     return snowflake_query(sql)
-
-
 @app.get("/history/sessions", tags=["history"])
-def history_sessions(hours: int = Query(default=24, ge=1, le=168)):
+def history_sessions(
+    granularity: str = Query(default="hour", pattern="^(hour|day|week|month|year)$"),
+    days: int = Query(default=1, ge=1, le=730),
+):
+    trunc = _trunc(granularity)
     sql = f"""
         SELECT
-            DATE_TRUNC('hour', window_start) AS hour,
+            {trunc} AS bucket,
             SUM(num_starts) AS starts,
             SUM(num_ends) AS ends,
             AVG(avg_duration_sec) AS avg_duration_sec
         FROM ANALYTICS.STREAM_SESSIONS_AGG
-        WHERE window_start >= DATEADD(hour, -{hours}, CURRENT_TIMESTAMP)
+        WHERE window_start >= DATEADD(day, -{days}, CURRENT_TIMESTAMP)
         GROUP BY 1
         ORDER BY 1
     """
     return snowflake_query(sql)
 
-
 @app.get("/history/wishlist", tags=["history"])
-def history_wishlist(hours: int = Query(default=24, ge=1, le=168)):
+def history_wishlist(
+    granularity: str = Query(default="hour", pattern="^(hour|day|week|month|year)$"),
+    days: int = Query(default=1, ge=1, le=730),
+):
+    trunc = _trunc(granularity)
     sql = f"""
         SELECT
-            DATE_TRUNC('hour', window_start) AS hour,
+            {trunc} AS bucket,
             SUM(num_added) AS added,
             SUM(num_removed) AS removed,
             SUM(net_added) AS net_added
         FROM ANALYTICS.STREAM_WISHLIST_AGG
-        WHERE window_start >= DATEADD(hour, -{hours}, CURRENT_TIMESTAMP)
+        WHERE window_start >= DATEADD(day, -{days}, CURRENT_TIMESTAMP)
         GROUP BY 1
         ORDER BY 1
     """
