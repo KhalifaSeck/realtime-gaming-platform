@@ -368,6 +368,70 @@ def live_all_stats(
     keys = list(r.scan_iter(match=pattern, count=200))[:limit]
     results = [{"key": k, "data": r.hgetall(k)} for k in keys]
     return {"count": len(results), "pattern": pattern, "results": results}
+# ============================================================
+# HISTORY endpoints (Snowflake ANALYTICS.STREAM_*_AGG)
+# ============================================================
+@app.get("/history/purchases", tags=["history"])
+def history_purchases(hours: int = Query(default=24, ge=1, le=168)):
+    sql = f"""
+        SELECT
+            DATE_TRUNC('hour', window_start) AS hour,
+            SUM(num_purchases) AS purchases,
+            SUM(revenue_net_usd) AS revenue
+        FROM ANALYTICS.STREAM_PURCHASES_AGG
+        WHERE window_start >= DATEADD(hour, -{hours}, CURRENT_TIMESTAMP)
+        GROUP BY 1
+        ORDER BY 1
+    """
+    return snowflake_query(sql)
+
+
+@app.get("/history/reviews", tags=["history"])
+def history_reviews(hours: int = Query(default=24, ge=1, le=168)):
+    sql = f"""
+        SELECT
+            DATE_TRUNC('hour', window_start) AS hour,
+            SUM(num_reviews) AS reviews,
+            AVG(avg_rating) AS avg_rating,
+            AVG(recommend_pct) AS avg_recommend_pct
+        FROM ANALYTICS.STREAM_REVIEWS_AGG
+        WHERE window_start >= DATEADD(hour, -{hours}, CURRENT_TIMESTAMP)
+        GROUP BY 1
+        ORDER BY 1
+    """
+    return snowflake_query(sql)
+
+
+@app.get("/history/sessions", tags=["history"])
+def history_sessions(hours: int = Query(default=24, ge=1, le=168)):
+    sql = f"""
+        SELECT
+            DATE_TRUNC('hour', window_start) AS hour,
+            SUM(num_starts) AS starts,
+            SUM(num_ends) AS ends,
+            AVG(avg_duration_sec) AS avg_duration_sec
+        FROM ANALYTICS.STREAM_SESSIONS_AGG
+        WHERE window_start >= DATEADD(hour, -{hours}, CURRENT_TIMESTAMP)
+        GROUP BY 1
+        ORDER BY 1
+    """
+    return snowflake_query(sql)
+
+
+@app.get("/history/wishlist", tags=["history"])
+def history_wishlist(hours: int = Query(default=24, ge=1, le=168)):
+    sql = f"""
+        SELECT
+            DATE_TRUNC('hour', window_start) AS hour,
+            SUM(num_added) AS added,
+            SUM(num_removed) AS removed,
+            SUM(net_added) AS net_added
+        FROM ANALYTICS.STREAM_WISHLIST_AGG
+        WHERE window_start >= DATEADD(hour, -{hours}, CURRENT_TIMESTAMP)
+        GROUP BY 1
+        ORDER BY 1
+    """
+    return snowflake_query(sql)
 
 if __name__ == "__main__":
     import uvicorn
