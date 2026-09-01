@@ -174,7 +174,7 @@ with placeholder.container():
                 top_r.sort_values("num_reviews"),
                 x="num_reviews", y="game_id",
                 orientation="h", text="num_reviews",
-                color="num_reviews", color_continuous_scale="yellowgreen",
+                color="num_reviews", color_continuous_scale="ylgn",
             )
             fig.update_traces(textposition="outside")
             fig.update_layout(
