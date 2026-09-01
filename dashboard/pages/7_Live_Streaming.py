@@ -146,7 +146,15 @@ with placeholder.container():
     # ---- Detect numeric columns per topic ----
     p_col = _first_col(df_purchases, ["revenue_net_usd", "revenue", "num_purchases"])
     r_col = _first_col(df_reviews, ["num_reviews", "reviews_count", "num_events"])
-    s_col = _first_col(df_sessions, ["num_sessions", "active_sessions", "num_active", "sessions_count"])
+    #s_col = _first_col(df_sessions, ["num_sessions", "active_sessions", "num_active", "sessions_count"])
+    # Sessions : calcule total_activity = starts + ends
+    if not df_sessions.empty and "num_starts" in df_sessions.columns and "num_ends" in df_sessions.columns:
+        df_sessions["num_starts"] = pd.to_numeric(df_sessions["num_starts"], errors="coerce").fillna(0)
+        df_sessions["num_ends"] = pd.to_numeric(df_sessions["num_ends"], errors="coerce").fillna(0)
+        df_sessions["total_activity"] = (df_sessions["num_starts"] + df_sessions["num_ends"]).astype(int)
+        s_col = "total_activity"
+    else:
+        s_col = _first_col(df_sessions, ["num_starts", "active_sessions", "num_active", "num_sessions"])
     w_col = _first_col(df_wishlist, ["net_added", "num_added", "num_events", "wishlist_net"])
 
     df_purchases = _to_num(df_purchases, ["num_purchases", "revenue_net_usd", "game_id"])
