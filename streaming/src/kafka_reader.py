@@ -1,5 +1,6 @@
 """Helper commun : lit un topic Kafka -> DataFrame streaming parse."""
 import os
+from typing import Optional
 
 from pyspark.sql import DataFrame, SparkSession
 from pyspark.sql.functions import col, from_json
@@ -16,7 +17,7 @@ def read_topic(
     spark: SparkSession,
     topic: str,
     schema: StructType,
-    bootstrap: str | None = None,
+    bootstrap: Optional[str] = None,
 ) -> DataFrame:
     servers = bootstrap or DEFAULT_BOOTSTRAP
     raw = (
