@@ -19,8 +19,6 @@ st.set_page_config(page_title="Live Streaming", page_icon="🎮", layout="wide")
 st.markdown(
     """
     <style>
-    .kpi-big { font-size: 2rem; font-weight: 700; }
-    .kpi-lbl { font-size: 0.85rem; color: #888; text-transform: uppercase; letter-spacing: 0.05em; }
     .stAlert { border-radius: 12px; }
     </style>
     """,
@@ -31,7 +29,9 @@ st.title("🎮 Live Streaming — Real-Time Gaming Events")
 st.caption("Powered by Kafka + Spark Structured Streaming + Redis • Auto-refresh")
 
 
-# ---------- Helpers ----------
+# ============================================================
+# Helpers
+# ============================================================
 def _live_get(path: str, **params):
     base = get_settings().api_base_url
     with httpx.Client(base_url=base, timeout=10.0) as c:
@@ -45,10 +45,7 @@ def _live_get(path: str, **params):
 
 
 def _parse_all_stats(resp) -> pd.DataFrame:
-    """
-    Normalise la reponse /live/all-stats en DataFrame.
-    Le format attendu : [{key, data: "json string"}, ...]
-    """
+    """Normalise /live/all-stats [{key, data: json-str}, ...] -> DataFrame."""
     if not resp:
         return pd.DataFrame()
     if isinstance(resp, dict):
@@ -75,6 +72,34 @@ def _parse_all_stats(resp) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
+def _extract_list(resp):
+    """Extrait une liste de dicts de n'importe quelle reponse API."""
+    if resp is None:
+        return []
+    if isinstance(resp, list):
+        return [x for x in resp if isinstance(x, dict)]
+    if isinstance(resp, dict):
+        for k in ("data", "anomalies", "results", "items"):
+            v = resp.get(k)
+            if isinstance(v, list):
+                return [x for x in v if isinstance(x, dict)]
+            if isinstance(v, str):
+                try:
+                    parsed = json.loads(v)
+                    if isinstance(parsed, list):
+                        return [x for x in parsed if isinstance(x, dict)]
+                except Exception:
+                    pass
+    return []
+
+
+def _first_col(df: pd.DataFrame, candidates: list) -> str | None:
+    for c in candidates:
+        if c in df.columns:
+            return c
+    return None
+
+
 def _to_num(df: pd.DataFrame, cols: list) -> pd.DataFrame:
     for c in cols:
         if c in df.columns:
@@ -82,33 +107,59 @@ def _to_num(df: pd.DataFrame, cols: list) -> pd.DataFrame:
     return df
 
 
-# ---------- Sidebar ----------
+def _bar_top(df: pd.DataFrame, num_col: str, color_scale: str, height: int = 380):
+    top = df.nlargest(len(df), num_col).sort_values(num_col)
+    fig = px.bar(
+        top, x=num_col, y="game_id",
+        orientation="h", text=num_col,
+        color=num_col, color_continuous_scale=color_scale,
+    )
+    fig.update_traces(textposition="outside")
+    fig.update_layout(
+        yaxis=dict(type="category"), height=height,
+        margin=dict(l=0, r=0, t=10, b=10), coloraxis_showscale=False,
+    )
+    return fig
+
+
+# ============================================================
+# Sidebar
+# ============================================================
 st.sidebar.header("⚙️ Settings")
 refresh_seconds = st.sidebar.slider("Refresh interval (sec)", 3, 30, 5)
 top_n = st.sidebar.slider("Top N games", 5, 20, 10)
 st.sidebar.caption(f"⏱️ Every {refresh_seconds}s • Redis TTL: 10 min")
 
-# ---------- Layout ----------
+
+# ============================================================
+# Corps
+# ============================================================
 placeholder = st.empty()
 
 with placeholder.container():
-    # ==================== Fetch ====================
+    # ---- Fetch ----
     df_purchases = _parse_all_stats(_live_get("/live/all-stats", topic="purchases", limit=500))
     df_reviews = _parse_all_stats(_live_get("/live/all-stats", topic="reviews", limit=500))
     df_sessions = _parse_all_stats(_live_get("/live/all-stats", topic="sessions", limit=500))
     df_wishlist = _parse_all_stats(_live_get("/live/all-stats", topic="wishlist", limit=500))
 
+    # ---- Detect numeric columns per topic ----
+    p_col = _first_col(df_purchases, ["revenue_net_usd", "revenue", "num_purchases"])
+    r_col = _first_col(df_reviews, ["num_reviews", "reviews_count", "num_events"])
+    s_col = _first_col(df_sessions, ["num_sessions", "active_sessions", "num_active", "sessions_count"])
+    w_col = _first_col(df_wishlist, ["net_added", "num_added", "num_events", "wishlist_net"])
+
     df_purchases = _to_num(df_purchases, ["num_purchases", "revenue_net_usd", "game_id"])
     df_reviews = _to_num(df_reviews, ["num_reviews", "avg_rating", "game_id"])
-    df_sessions = _to_num(df_sessions, ["num_sessions", "avg_duration_sec", "game_id"])
-    df_wishlist = _to_num(df_wishlist, ["num_events", "game_id"])
+    df_sessions = _to_num(df_sessions, [s_col, "game_id"]) if s_col else df_sessions
+    df_wishlist = _to_num(df_wishlist, [w_col, "game_id"]) if w_col else df_wishlist
 
-    # ==================== KPIs top ====================
+    # ---- KPIs top ----
     total_revenue = float(df_purchases["revenue_net_usd"].sum()) if "revenue_net_usd" in df_purchases else 0
     total_purchases = int(df_purchases["num_purchases"].sum()) if "num_purchases" in df_purchases else 0
     total_reviews = int(df_reviews["num_reviews"].sum()) if "num_reviews" in df_reviews else 0
-    total_sessions = int(df_sessions["num_sessions"].sum()) if "num_sessions" in df_sessions else 0
-    total_wishlist = int(df_wishlist["num_events"].sum()) if "num_events" in df_wishlist else len(df_wishlist)
+    total_sessions = int(df_sessions[s_col].sum()) if s_col else 0
+    total_wishlist = int(df_wishlist[w_col].sum()) if w_col else len(df_wishlist)
 
     c1, c2, c3, c4, c5 = st.columns(5)
     c1.metric("💰 Revenue (live)", f"${total_revenue:,.2f}", f"{total_purchases} purchases")
@@ -119,7 +170,7 @@ with placeholder.container():
 
     st.divider()
 
-    # ==================== Live pulse par topic ====================
+    # ---- Live pulse ----
     st.subheader("📊 Live pulse — events per topic")
     pulse_df = pd.DataFrame({
         "Topic": ["Purchases", "Reviews", "Sessions", "Wishlist"],
@@ -139,123 +190,91 @@ with placeholder.container():
 
     st.divider()
 
-    # ==================== 2 colonnes : top games ====================
+    # ---- Top N par topic ----
     st.subheader(f"🏆 Top {top_n} games (current window)")
+
     colA, colB = st.columns(2)
 
-    # --- Purchases ---
     with colA:
         st.markdown("### 💰 Top revenue")
         if not df_purchases.empty and "revenue_net_usd" in df_purchases:
-            top_p = df_purchases.nlargest(top_n, "revenue_net_usd")[
-                ["game_id", "num_purchases", "revenue_net_usd", "updated_at"]
-            ]
-            fig = px.bar(
-                top_p.sort_values("revenue_net_usd"),
-                x="revenue_net_usd", y="game_id",
-                orientation="h", text="revenue_net_usd",
-                color="revenue_net_usd", color_continuous_scale="greens",
-            )
-            fig.update_traces(texttemplate="$%{text:.2f}", textposition="outside")
-            fig.update_layout(
-                yaxis=dict(type="category"), height=380,
-                margin=dict(l=0, r=0, t=10, b=10), coloraxis_showscale=False,
-            )
-            st.plotly_chart(fig, use_container_width=True)
+            top_p = df_purchases.nlargest(top_n, "revenue_net_usd")
+            st.plotly_chart(_bar_top(top_p, "revenue_net_usd", "greens"), use_container_width=True)
         else:
-            st.info("No purchase data.")
+            st.info("No purchase data yet.")
 
-    # --- Reviews ---
     with colB:
         st.markdown("### ⭐ Top reviews")
-        if not df_reviews.empty and "num_reviews" in df_reviews:
-            top_r = df_reviews.nlargest(top_n, "num_reviews")
-            fig = px.bar(
-                top_r.sort_values("num_reviews"),
-                x="num_reviews", y="game_id",
-                orientation="h", text="num_reviews",
-                color="num_reviews", color_continuous_scale="ylgn",
-            )
-            fig.update_traces(textposition="outside")
-            fig.update_layout(
-                yaxis=dict(type="category"), height=380,
-                margin=dict(l=0, r=0, t=10, b=10), coloraxis_showscale=False,
-            )
-            st.plotly_chart(fig, use_container_width=True)
+        if not df_reviews.empty and r_col:
+            top_r = df_reviews.nlargest(top_n, r_col)
+            st.plotly_chart(_bar_top(top_r, r_col, "ylgn"), use_container_width=True)
         else:
-            st.info("No review data.")
+            st.info("No review data yet.")
 
     colC, colD = st.columns(2)
 
-    # --- Sessions ---
     with colC:
         st.markdown("### 🎯 Top active sessions")
-        if not df_sessions.empty and "num_sessions" in df_sessions:
-            top_s = df_sessions.nlargest(top_n, "num_sessions")
-            fig = px.bar(
-                top_s.sort_values("num_sessions"),
-                x="num_sessions", y="game_id",
-                orientation="h", text="num_sessions",
-                color="num_sessions", color_continuous_scale="blues",
-            )
-            fig.update_traces(textposition="outside")
-            fig.update_layout(
-                yaxis=dict(type="category"), height=380,
-                margin=dict(l=0, r=0, t=10, b=10), coloraxis_showscale=False,
-            )
-            st.plotly_chart(fig, use_container_width=True)
+        if not df_sessions.empty and s_col:
+            top_s = df_sessions.nlargest(top_n, s_col)
+            st.plotly_chart(_bar_top(top_s, s_col, "blues"), use_container_width=True)
         else:
-            st.info("No session data.")
+            st.info("No session data yet.")
 
-    # --- Wishlist ---
     with colD:
         st.markdown("### 📥 Top wishlist adds")
-        if not df_wishlist.empty:
-            num_col = next(
-                (c for c in ("num_events", "num_adds", "wishlist_net") if c in df_wishlist.columns),
-                None,
-            )
-            if num_col:
-                top_w = df_wishlist.nlargest(top_n, num_col)
-                fig = px.bar(
-                    top_w.sort_values(num_col),
-                    x=num_col, y="game_id",
-                    orientation="h", text=num_col,
-                    color=num_col, color_continuous_scale="purples",
-                )
-                fig.update_traces(textposition="outside")
-                fig.update_layout(
-                    yaxis=dict(type="category"), height=380,
-                    margin=dict(l=0, r=0, t=10, b=10), coloraxis_showscale=False,
-                )
-                st.plotly_chart(fig, use_container_width=True)
-            else:
-                st.dataframe(df_wishlist.head(top_n), use_container_width=True, height=380)
+        if not df_wishlist.empty and w_col:
+            top_w = df_wishlist.nlargest(top_n, w_col)
+            st.plotly_chart(_bar_top(top_w, w_col, "purples"), use_container_width=True)
         else:
-            st.info("No wishlist data.")
+            st.info("No wishlist data yet.")
 
     st.divider()
 
-    # ==================== Anomalies ====================
+    # ---- Anomalies ----
     st.subheader("🚨 Streaming Anomalies")
-    anomalies = _live_get("/anomalies/stream", limit=30) or []
-    if isinstance(anomalies, dict):
-        anomalies = anomalies.get("data") or list(anomalies.values())
-    if anomalies:
-        df_anom = pd.DataFrame(anomalies)
-        # KPI cards par type d'anomalie
-        if "anomaly_type" in df_anom.columns:
-            counts = df_anom["anomaly_type"].value_counts()
+    anomalies_list = _extract_list(_live_get("/anomalies/stream", limit=30))
+
+    if anomalies_list:
+        df_anom = pd.DataFrame(anomalies_list)
+        type_col = _first_col(df_anom, ["anomaly_type", "ANOMALY_TYPE"])
+
+        if type_col:
+            counts = df_anom[type_col].value_counts()
             cols = st.columns(min(4, max(1, len(counts))))
             for i, (atype, count) in enumerate(counts.items()):
-                cols[i % len(cols)].metric(f"⚠️ {atype}", int(count))
-        st.dataframe(df_anom, use_container_width=True, height=300)
+                label = atype.replace("is_", "").replace("_", " ").title()
+                icon = {
+                    "viral purchases": "🔥",
+                    "viral wishlist": "📥",
+                    "review bomb": "⭐",
+                    "ccu spike": "🎯",
+                }.get(label.lower(), "⚠️")
+                cols[i % len(cols)].metric(f"{icon} {label}", int(count))
+
+            counts_df = counts.reset_index()
+            counts_df.columns = ["anomaly_type", "count"]
+            fig_anom = px.bar(
+                counts_df, x="anomaly_type", y="count", text="count",
+                color="anomaly_type",
+                color_discrete_sequence=px.colors.qualitative.Set2,
+            )
+            fig_anom.update_traces(textposition="outside")
+            fig_anom.update_layout(
+                showlegend=False, height=280,
+                margin=dict(t=20, b=20),
+                xaxis_title="", yaxis_title="Count (last window)",
+            )
+            st.plotly_chart(fig_anom, use_container_width=True)
+
+        with st.expander(f"📋 View all {len(df_anom)} anomalies"):
+            st.dataframe(df_anom, use_container_width=True, height=350)
     else:
         st.success("✅ No anomalies detected.")
 
     st.divider()
 
-    # ==================== Timestamp ====================
+    # ---- Timestamp ----
     now_utc = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
     st.caption(f"⏱️ Last refresh: {now_utc} • Next in {refresh_seconds}s")
 
