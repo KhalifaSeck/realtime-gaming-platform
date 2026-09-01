@@ -1,8 +1,9 @@
 -- ============================================================
 -- copy/02 - COPY INTO RAW.IGDB_GAMES + RAW.STEAMSPY_GAMES
 --
--- Full-refresh pour la date {DATE}.
--- Le placeholder {DATE} est remplace par ops.batch_copy au runtime.
+-- Pattern full-refresh : TRUNCATE puis COPY.
+-- Necessaire car l'ingestion ecrit le meme filename chaque jour
+-- (overwrite=True) et Snowflake tracke par filename -> sinon skip.
 -- ============================================================
 
 USE ROLE ACCOUNTADMIN;
@@ -32,7 +33,7 @@ FROM (
         $1:game_modes::STRING,
         $1:developer::STRING,
         $1:publisher::STRING
-    FROM @ADLS_RAW/igdb_games/date={DATE}/
+    FROM @ADLS_RAW/igdb_games
 )
 FILE_FORMAT = (FORMAT_NAME = 'PARQUET_SNAPPY')
 PATTERN = '.*\.parquet'
@@ -71,7 +72,7 @@ FROM (
         $1:tags::STRING,
         $1:languages::STRING,
         $1:genre::STRING
-    FROM @ADLS_RAW/steamspy_games/date={DATE}/
+    FROM @ADLS_RAW/steamspy_games
 )
 FILE_FORMAT = (FORMAT_NAME = 'PARQUET_SNAPPY')
 PATTERN = '.*\.parquet'

@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rtgaming-streaming
+  namespace: rtgaming
+  labels:
+    app: rtgaming-streaming
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: rtgaming-streaming
+  template:
+    metadata:
+      labels:
+        app: rtgaming-streaming
+    spec:
+      containers:
+        - name: streaming
+          image: rtgamingdevacrmdid1l.azurecr.io/streaming:latest
+          imagePullPolicy: Always
+          # ENTRYPOINT = spark-submit, CMD = --packages ... src/main.py
+          envFrom:
+            - configMapRef:
+                name: rtgaming-kafka-config
+            - secretRef:
+                name: rtgaming-adls-secret
+          env:
+            - name: REDIS_HOST
+              value: "redis-master.rtgaming.svc.cluster.local"
+            - name: REDIS_PORT
+              value: "6379"
+          resources:
+            requests:
+              cpu: 500m
+              memory: 1500Mi
+            limits:
+              cpu: 1500m
+              memory: 2500Mi

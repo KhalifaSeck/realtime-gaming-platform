@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+
+# Envs
+.venv/
+venv/
+.env
+.env.*
+!.env.example
+
+# Data (au cas ou)
+data/
+
+# Docs
+*.md
+
+# Git
+.git/
+.gitignore
+
+# IDE
+.vscode/
+.idea/

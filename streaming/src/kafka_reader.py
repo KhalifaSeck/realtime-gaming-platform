@@ -1,19 +1,28 @@
 """Helper commun : lit un topic Kafka -> DataFrame streaming parse."""
+import os
+
 from pyspark.sql import DataFrame, SparkSession
 from pyspark.sql.functions import col, from_json
 from pyspark.sql.types import StructType
+
+
+DEFAULT_BOOTSTRAP = os.environ.get(
+    "KAFKA_BOOTSTRAP_SERVERS",
+    "kafka:29092",
+)
 
 
 def read_topic(
     spark: SparkSession,
     topic: str,
     schema: StructType,
-    bootstrap: str = "kafka:29092",
+    bootstrap: str | None = None,
 ) -> DataFrame:
+    servers = bootstrap or DEFAULT_BOOTSTRAP
     raw = (
         spark.readStream
         .format("kafka")
-        .option("kafka.bootstrap.servers", bootstrap)
+        .option("kafka.bootstrap.servers", servers)
         .option("subscribe", topic)
         .option("startingOffsets", "latest")
         .load()

@@ -1,0 +1,41 @@
+version: 2
+
+models:
+  - name: mart_games
+    columns:
+      - name: steam_app_id
+        tests: [not_null, unique]
+      - name: popularity_tier
+        tests:
+          - accepted_values:
+              values: ['superstar', 'hit', 'mid', 'niche', 'unknown']
+
+  - name: mart_trending_games
+    columns:
+      - name: steam_app_id
+        tests: [not_null, unique]
+
+  - name: mart_genre_stats
+    columns:
+      - name: genre
+        tests: [not_null, unique]
+
+  - name: mart_publisher_stats
+    columns:
+      - name: publisher
+        tests: [not_null, unique]
+
+  - name: mart_price_analysis
+    columns:
+      - name: price_tier
+        tests: [not_null, unique]
+
+  - name: mart_review_analysis
+    columns:
+      - name: steam_app_id
+        tests: [not_null, unique]
+
+  - name: mart_session_analysis
+    columns:
+      - name: steam_app_id
+        tests: [not_null, unique]

@@ -1,0 +1,33 @@
+# ============================================================
+# gaming_dbt - dbt project config
+# ============================================================
+
+name: 'gaming_dbt'
+version: '1.0.0'
+config-version: 2
+
+profile: 'gaming_dbt'
+
+model-paths: ["models"]
+analysis-paths: ["analyses"]
+test-paths: ["tests"]
+seed-paths: ["seeds"]
+macro-paths: ["macros"]
+snapshot-paths: ["snapshots"]
+
+clean-targets:
+  - "target"
+  - "dbt_packages"
+vars:
+  # Fenetre de lookback pour les marts avec dimension temps
+  # Overridable via CLI : dbt run --vars '{trending_lookback_days: 1}'
+  trending_lookback_days: 30
+  
+models:
+  gaming_dbt:
+    staging:
+      +materialized: view
+      +schema: STAGING
+    marts:
+      +materialized: table
+      +schema: ANALYTICS

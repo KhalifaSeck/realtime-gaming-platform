@@ -1,0 +1,14 @@
+apache-airflow-providers-snowflake
+apache-airflow-providers-microsoft-azure
+apache-airflow-providers-http
+dbt-core
+dbt-snowflake
+snowflake-connector-python
+neo4j
+requests
+python-dotenv
+azure-storage-file-datalake
+azure-identity
+tenacity
+pandas
+structlog

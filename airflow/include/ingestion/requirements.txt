@@ -1,0 +1,17 @@
+# HTTP
+requests
+
+# Config
+python-dotenv
+pydantic-settings
+
+# Data / Parquet
+pandas
+pyarrow
+
+# Azure ADLS Gen2
+azure-storage-file-datalake
+azure-identity
+
+# Logging structuré
+structlog

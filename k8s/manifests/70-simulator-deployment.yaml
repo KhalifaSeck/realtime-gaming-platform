@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rtgaming-simulator
+  namespace: rtgaming
+  labels:
+    app: rtgaming-simulator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rtgaming-simulator
+  template:
+    metadata:
+      labels:
+        app: rtgaming-simulator
+    spec:
+      containers:
+        - name: simulator
+          image: rtgamingdevacrmdid1l.azurecr.io/simulator:latest
+          imagePullPolicy: Always
+          # ENTRYPOINT + CMD du Dockerfile sont deja bons (--producers all --rate 2)
+          envFrom:
+            - configMapRef:
+                name: rtgaming-kafka-config
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi

@@ -1,0 +1,58 @@
+# ============================================================
+# Kafka KRaft single-broker (portfolio-scale)
+# ============================================================
+
+image:
+  registry: docker.io
+  repository: bitnamilegacy/kafka
+  tag: "3.9.0-debian-12-r0"
+
+listeners:
+  client:
+    protocol: PLAINTEXT
+  interbroker:
+    protocol: PLAINTEXT
+  controller:
+    protocol: PLAINTEXT
+  external:
+    protocol: PLAINTEXT
+
+# Satisfait le validator meme si on utilise PLAINTEXT
+sasl:
+  enabledMechanisms: "PLAIN"
+  interBrokerMechanism: "PLAIN"
+  controllerMechanism: "PLAIN"
+
+kraft:
+  enabled: true
+
+controller:
+  replicaCount: 1
+  persistence:
+    enabled: true
+    size: 8Gi
+  resources:
+    requests:
+      cpu: 300m
+      memory: 1Gi
+    limits:
+      cpu: 1
+      memory: 1500Mi
+
+broker:
+  replicaCount: 0
+
+zookeeper:
+  enabled: false
+
+externalAccess:
+  enabled: false
+
+metrics:
+  jmx:
+    enabled: false
+
+service:
+  type: ClusterIP
+  ports:
+    client: 9092
