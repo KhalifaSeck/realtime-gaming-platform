@@ -1,0 +1,91 @@
+# ============================================================
+# kube-prometheus-stack - portfolio-scale
+# ============================================================
+
+# --- Prometheus (retention 6h pour economiser disk) ---
+prometheus:
+  prometheusSpec:
+    retention: 6h
+    retentionSize: "3GB"
+    resources:
+      requests:
+        cpu: 200m
+        memory: 500Mi
+      limits:
+        cpu: 800m
+        memory: 1Gi
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 5Gi
+    # Scrape TOUS les ServiceMonitors sans label restriction
+    serviceMonitorSelectorNilUsesHelmValues: false
+    podMonitorSelectorNilUsesHelmValues: false
+
+# --- Grafana ---
+grafana:
+  service:
+    type: LoadBalancer
+  adminPassword: rtgaming2026
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  persistence:
+    enabled: true
+    size: 2Gi
+  # Sidecar auto-discover pour dashboards custom via ConfigMaps
+  sidecar:
+    dashboards:
+      enabled: true
+      searchNamespace: ALL
+    datasources:
+      enabled: true
+
+# --- AlertManager desactive (pas besoin pour portfolio) ---
+alertmanager:
+  enabled: false
+
+# --- Node exporter (deja daemon set, garder) ---
+nodeExporter:
+  enabled: true
+
+# --- Kube state metrics (garder) ---
+kube-state-metrics:
+  enabled: true
+
+# --- Prometheus operator lui-meme ---
+prometheusOperator:
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+
+# --- Composants K8s optionnels (desactives pour AKS managed) ---
+kubeApiServer:
+  enabled: true
+kubelet:
+  enabled: true
+kubeControllerManager:
+  enabled: false
+coreDns:
+  enabled: true
+kubeDns:
+  enabled: false
+kubeEtcd:
+  enabled: false
+kubeScheduler:
+  enabled: false
+kubeProxy:
+  enabled: true
+kubeStateMetrics:
+  enabled: true

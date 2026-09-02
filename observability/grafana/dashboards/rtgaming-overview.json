@@ -1,0 +1,79 @@
+{
+  "annotations": {"list": []},
+  "editable": true,
+  "graphTooltip": 1,
+  "id": null,
+  "panels": [
+    {
+      "type": "stat",
+      "title": "🟢 Pods Running (rtgaming)",
+      "gridPos": {"h": 4, "w": 6, "x": 0, "y": 0},
+      "targets": [{"expr": "sum(kube_pod_status_phase{namespace=\"rtgaming\", phase=\"Running\"})", "refId": "A"}],
+      "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "thresholds": {"steps": [{"color": "red", "value": null}, {"color": "green", "value": 8}]}}},
+      "datasource": "Prometheus"
+    },
+    {
+      "type": "stat",
+      "title": "🔴 Pods Failed/Pending",
+      "gridPos": {"h": 4, "w": 6, "x": 6, "y": 0},
+      "targets": [{"expr": "sum(kube_pod_status_phase{namespace=\"rtgaming\", phase=~\"Failed|Pending\"})", "refId": "A"}],
+      "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "thresholds": {"steps": [{"color": "green", "value": null}, {"color": "red", "value": 1}]}}},
+      "datasource": "Prometheus"
+    },
+    {
+      "type": "stat",
+      "title": "📊 API req/s",
+      "gridPos": {"h": 4, "w": 6, "x": 12, "y": 0},
+      "targets": [{"expr": "sum(rate(http_requests_total{namespace=\"rtgaming\"}[1m]))", "refId": "A"}],
+      "fieldConfig": {"defaults": {"unit": "reqps", "color": {"mode": "palette-classic"}}},
+      "datasource": "Prometheus"
+    },
+    {
+      "type": "stat",
+      "title": "⚠️ 5xx errors/s",
+      "gridPos": {"h": 4, "w": 6, "x": 18, "y": 0},
+      "targets": [{"expr": "sum(rate(http_requests_total{namespace=\"rtgaming\", status=~\"5..\"}[5m]))", "refId": "A"}],
+      "fieldConfig": {"defaults": {"unit": "reqps", "color": {"mode": "thresholds"}, "thresholds": {"steps": [{"color": "green", "value": null}, {"color": "red", "value": 0.1}]}}},
+      "datasource": "Prometheus"
+    },
+    {
+      "type": "timeseries",
+      "title": "API Requests per second by endpoint",
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 4},
+      "targets": [{"expr": "sum(rate(http_requests_total{namespace=\"rtgaming\"}[1m])) by (handler)", "legendFormat": "{{handler}}", "refId": "A"}],
+      "datasource": "Prometheus"
+    },
+    {
+      "type": "timeseries",
+      "title": "API Latency P99 (seconds)",
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 4},
+      "targets": [{"expr": "histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket{namespace=\"rtgaming\"}[5m])) by (le, handler))", "legendFormat": "{{handler}}", "refId": "A"}],
+      "fieldConfig": {"defaults": {"unit": "s"}},
+      "datasource": "Prometheus"
+    },
+    {
+      "type": "timeseries",
+      "title": "Memory usage per pod (MB)",
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 12},
+      "targets": [{"expr": "sum(container_memory_working_set_bytes{namespace=\"rtgaming\", container!=\"\"}) by (pod) / 1024 / 1024", "legendFormat": "{{pod}}", "refId": "A"}],
+      "fieldConfig": {"defaults": {"unit": "decmbytes"}},
+      "datasource": "Prometheus"
+    },
+    {
+      "type": "timeseries",
+      "title": "CPU usage per pod (cores)",
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 12},
+      "targets": [{"expr": "sum(rate(container_cpu_usage_seconds_total{namespace=\"rtgaming\", container!=\"\"}[1m])) by (pod)", "legendFormat": "{{pod}}", "refId": "A"}],
+      "datasource": "Prometheus"
+    }
+  ],
+  "refresh": "10s",
+  "schemaVersion": 39,
+  "tags": ["rtgaming", "overview"],
+  "templating": {"list": []},
+  "time": {"from": "now-15m", "to": "now"},
+  "timezone": "",
+  "title": "RTGaming Overview",
+  "uid": "rtgaming-overview",
+  "version": 1
+}
