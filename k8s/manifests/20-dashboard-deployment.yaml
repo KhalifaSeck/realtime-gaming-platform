@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: dashboard
-          image: rtgamingdevacrmdid1l.azurecr.io/rtgaming-dashboard:latest
+          image: rtgamingdevacrmdid1l.azurecr.io/dashboard:latest
           imagePullPolicy: Always
           ports:
             - containerPort: 8501

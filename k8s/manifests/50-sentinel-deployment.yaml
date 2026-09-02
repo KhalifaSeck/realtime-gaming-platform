@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: sentinel
-          image: rtgamingdevacrmdid1l.azurecr.io/rtgaming-sentinel:latest
+          image: rtgamingdevacrmdid1l.azurecr.io/sentinel:latest
           imagePullPolicy: Always
           ports:
             - containerPort: 8888

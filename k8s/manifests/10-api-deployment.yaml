@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: api
-          image: rtgamingdevacrmdid1l.azurecr.io/rtgaming-api:latest
+          image: rtgamingdevacrmdid1l.azurecr.io/api:latest
           imagePullPolicy: Always
           ports:
             - containerPort: 8000
