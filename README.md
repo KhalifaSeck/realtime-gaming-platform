@@ -1,6 +1,6 @@
 # 🎮 Real-Time Gaming Intelligence Platform
 
-> Plateforme data engineering **cloud-native** de bout en bout : ingestion multi-sources, streaming temps réel, entrepôt analytique, knowledge graph, dashboard interactif, agent IA, orchestration Airflow et observabilité complète — le tout déployé sur **Azure Kubernetes Service** via **CI/CD GitHub Actions**.
+> **Cloud-native data engineering platform** end-to-end: multi-source ingestion, real-time streaming, analytical warehouse, knowledge graph, interactive dashboard, AI agent, Airflow orchestration, and full observability — all deployed on **Azure Kubernetes Service** via **GitHub Actions CI/CD**.
 
 <p align="center">
   <img src="https://img.shields.io/badge/status-production--ready-success?style=for-the-badge" alt="status"/>
@@ -28,71 +28,65 @@
   <img src="https://img.shields.io/badge/Grafana-F46800?style=flat-square&logo=grafana&logoColor=white" alt="grafana"/>
 </p>
 
----
-
-## 🎬 Démo vidéo
-
-> **📹 Loom walkthrough (5 min)** — [Cliquer pour visionner](https://www.loom.com/share/TON_LIEN_LOOM_ICI)
-
-<!-- Ou ajoute ton GIF ici après l'enregistrement -->
-<!-- ![Demo](docs/media/demo.gif) -->
+<!-- Hero GIF: full dashboard tour (10 pages) -->
+<!-- ![Hero](docs/media/hero-demo.gif) -->
 
 ---
 
 ## 🌐 Live Demo
 
-Environnement de production tournant sur **AKS Canada Central** :
+Production environment running on **AKS Canada Central**:
 
 | Interface | URL | Login |
 |---|---|---|
-| 🎯 **Dashboard Streamlit** (10 pages) | http://4.172.6.246 | — |
+| 🎯 **Streamlit Dashboard** (10 pages) | http://4.172.6.246 | — |
 | 📊 **Grafana Observability** | http://20.116.178.122 | `admin` / `rtgaming2026` |
 
 ---
 
-## 🧭 Sommaire
+## 🧭 Table of Contents
 
-- [Pourquoi ce projet ?](#-pourquoi-ce-projet-)
-- [Architecture globale](#-architecture-globale)
-- [Les 16 briques](#-les-16-briques)
-- [Stack technique](#-stack-technique)
-- [Ce que je n'ai PAS utilisé](#-ce-que-je-nai-pas-utilisé-et-pourquoi)
-- [Structure du repo](#-structure-du-repo)
-- [Démo pas à pas](#-démo-pas-à-pas)
-- [Reproduction locale](#-reproduction-locale)
-- [Highlights techniques](#-highlights-techniques)
+- [Why this project?](#-why-this-project)
+- [Architecture overview](#-architecture-overview)
+- [The 16 building blocks](#-the-16-building-blocks)
+- [Tech stack](#-tech-stack)
+- [What I did NOT use](#-what-i-did-not-use-and-why)
+- [Repo structure](#-repo-structure)
+- [Feature walkthrough](#-feature-walkthrough)
+- [Local reproduction](#-local-reproduction)
+- [Technical highlights](#-technical-highlights)
 - [Roadmap](#-roadmap)
 - [Contact](#-contact)
 
 ---
 
-## 💡 Pourquoi ce projet ?
+## 💡 Why this project?
 
-Le monde du jeu vidéo génère un flux massif de données : achats, sessions, reviews, wishlist. La question métier centrale est **comment détecter en temps réel les jeux qui deviennent viraux** tout en gardant une **vision analytique historique** ?
+The gaming industry generates a massive flow of data: purchases, sessions, reviews, wishlists. The central business question is: **how do we detect games going viral in real time** while keeping **historical analytical visibility**?
 
-Ce projet répond à cette question en construisant une plateforme data engineering **complète et cloud-native** qui :
+This project answers that question by building a **complete cloud-native data engineering platform** that:
 
-- Ingère un **catalogue de ~100 000 jeux** (IGDB + SteamSpy)
-- Simule et traite **8 événements utilisateurs par seconde** (Kafka + Spark)
-- Alimente un **entrepôt Snowflake** avec 20+ modèles dbt
-- Construit un **Knowledge Graph Neo4j** (jeux, genres, éditeurs, tags)
-- Expose une **API FastAPI** (20+ endpoints)
-- Fournit un **dashboard Streamlit** de 10 pages avec vues live + historiques
-- Intègre un **agent LLM local** (LangGraph + Ollama Qwen3) pour requêtes en langage naturel
-- Orchestre le tout avec **Airflow (3 DAGs)** et **CI/CD GitHub Actions**
-- Monitore l'infrastructure avec **Prometheus + Grafana + alertes**
+- Ingests a **catalog of ~100,000 games** (IGDB + SteamSpy)
+- Simulates and processes **8 user events per second** (Kafka + Spark)
+- Powers a **Snowflake warehouse** with 20+ dbt models
+- Builds a **Neo4j Knowledge Graph** (games, genres, publishers, tags)
+- Exposes a **FastAPI service** (20+ endpoints)
+- Provides a **10-page Streamlit dashboard** with live + historical views
+- Integrates a **local LLM agent** (LangGraph + Ollama Qwen3) for natural-language queries
+- Orchestrates everything with **Airflow (3 DAGs)** and **GitHub Actions CI/CD**
+- Monitors infrastructure with **Prometheus + Grafana + alerts**
 
-**Objectif portfolio** : démontrer la maîtrise de bout en bout d'une plateforme data cloud **niveau production**.
+**Portfolio goal**: demonstrate end-to-end mastery of a **production-grade** cloud data platform.
 
 ---
 
-## 🏗 Architecture globale
+## 🏗 Architecture overview
 
 ```mermaid
 flowchart LR
     subgraph SRC["🎮 Sources"]
-        IGDB["IGDB API<br/>(catalogue)"]
-        STEAM["SteamSpy API<br/>(catalogue)"]
+        IGDB["IGDB API<br/>(catalog)"]
+        STEAM["SteamSpy API<br/>(catalog)"]
         SIM["Kafka Simulator<br/>(purchases/reviews/<br/>sessions/wishlist)"]
     end
 
@@ -123,7 +117,7 @@ flowchart LR
 
     subgraph OPS["🛡 Ops & Observability"]
         AIRFLOW["Airflow<br/>3 DAGs"]
-        GRAF["Prometheus<br/>+ Grafana<br/>+ 3 alertes"]
+        GRAF["Prometheus<br/>+ Grafana<br/>+ 3 alerts"]
         CICD["GitHub Actions<br/>CI/CD"]
     end
 
@@ -152,76 +146,76 @@ flowchart LR
 
 ---
 
-## 🧱 Les 16 briques
+## 🧱 The 16 building blocks
 
-| # | Brique | Techno principale | Livrable |
+| # | Block | Main tech | Deliverable |
 |---|---|---|---|
-| 1 | **Infrastructure Azure** | Terraform | AKS + ADLS Gen2 + ACR + resource groups |
-| 2 | **Data lake ADLS** | Azure Storage | Containers `raw/` avec `igdb_games/`, `steamspy_games/`, `streaming/`, `streaming_events/` |
-| 3 | **Ingestion batch** | Python + azure-storage-file-datalake | ~10 000 jeux IGDB + ~86 000 SteamSpy (paginés + résilients) |
-| 4 | **Kafka streaming** | Kafka 3.9 KRaft (Helm bitnami) | 4 topics : `purchases`, `reviews`, `sessions`, `wishlist` |
-| 5 | **Producers simulator** | confluent-kafka + Faker | 4 producers threadés (8 events/s configurable) |
-| 6 | **Spark Structured Streaming** | Spark 3.5 + PySpark | 8 queries : 4 aggregates + 4 raw events → Redis + ADLS |
-| 7 | **Snowflake DWH** | Snowflake + snowflake-connector-python | Schémas `RAW`, `STAGING`, `ANALYTICS` + stage ADLS |
-| 8 | **dbt** | dbt-core + dbt-snowflake | 10 modèles staging + 7 marts (games, genre, publisher, trending, anomalies stream) |
-| 9 | **Neo4j Knowledge Graph** | Neo4j 5 (Helm) + graph-data-science | Nodes : Game/Genre/Publisher/Developer/Platform/Theme/Tag. Relations : `BELONGS_TO`, `SIMILAR_TO`, `PUBLISHED_BY`, `DEVELOPED_BY` |
-| 10 | **API FastAPI** | FastAPI + uvicorn + prometheus-instrumentator | 20+ endpoints : `/games`, `/trending`, `/anomalies`, `/live/*`, `/history/*`, `/health` |
-| 11 | **Dashboard Streamlit** | Streamlit + Plotly + httpx | 10 pages : Home, Games, Trending, Anomalies, Market Stats, Knowledge Graph, Sentinel AI, **Live Streaming**, **Streaming History**, **System Health** |
-| 12 | **Sentinel AI** | LangGraph + langchain-ollama (Qwen3:4b) | Agent tool-calling qui interroge l'API en langage naturel |
-| 13 | **Airflow** | Astro Runtime 3.3 (Airflow 3.x) | 3 DAGs : `batch_daily`, `streaming_copy_to_snowflake` (5min), `streaming_agg_copy_to_snowflake` (5min) |
-| 14 | **CI/CD** | GitHub Actions | Build multi-image matrix → push ACR → apply K8s manifests → rollout restart |
-| 15 | **Déploiement AKS** | Helm + kubectl + manifests | Namespaces `rtgaming` + `observability`, 3 nodes B2s_v2 |
-| 16 | **Observabilité** | Prometheus + Grafana + kube-state-metrics | Dashboard "RTGaming Overview", 3 alertes rules (pod down / restart / CPU) |
+| 1 | **Azure Infrastructure** | Terraform | AKS + ADLS Gen2 + ACR + resource groups |
+| 2 | **ADLS data lake** | Azure Storage | `raw/` container with `igdb_games/`, `steamspy_games/`, `streaming/`, `streaming_events/` |
+| 3 | **Batch ingestion** | Python + azure-storage-file-datalake | ~10,000 IGDB games + ~86,000 SteamSpy (paginated + resilient) |
+| 4 | **Kafka streaming** | Kafka 3.9 KRaft (bitnami Helm chart) | 4 topics: `purchases`, `reviews`, `sessions`, `wishlist` |
+| 5 | **Simulator producers** | confluent-kafka + Faker | 4 threaded producers (configurable 8 events/s) |
+| 6 | **Spark Structured Streaming** | Spark 3.5 + PySpark | 8 queries: 4 aggregates + 4 raw events → Redis + ADLS |
+| 7 | **Snowflake DWH** | Snowflake + snowflake-connector-python | `RAW`, `STAGING`, `ANALYTICS` schemas + ADLS stage |
+| 8 | **dbt** | dbt-core + dbt-snowflake | 10 staging + 7 marts (games, genre, publisher, trending, streaming anomalies) |
+| 9 | **Neo4j Knowledge Graph** | Neo4j 5 (Helm) + graph-data-science | Nodes: Game/Genre/Publisher/Developer/Platform/Theme/Tag. Relationships: `BELONGS_TO`, `SIMILAR_TO`, `PUBLISHED_BY`, `DEVELOPED_BY` |
+| 10 | **FastAPI service** | FastAPI + uvicorn + prometheus-instrumentator | 20+ endpoints: `/games`, `/trending`, `/anomalies`, `/live/*`, `/history/*`, `/health` |
+| 11 | **Streamlit dashboard** | Streamlit + Plotly + httpx | 10 pages: Home, Games, Trending, Anomalies, Market Stats, Knowledge Graph, Sentinel AI, **Live Streaming**, **Streaming History**, **System Health** |
+| 12 | **Sentinel AI** | LangGraph + langchain-ollama (Qwen3:4b) | Tool-calling agent querying the API in natural language |
+| 13 | **Airflow** | Astro Runtime 3.3 (Airflow 3.x) | 3 DAGs: `batch_daily`, `streaming_copy_to_snowflake` (5min), `streaming_agg_copy_to_snowflake` (5min) |
+| 14 | **CI/CD** | GitHub Actions | Matrix build → push ACR → apply K8s manifests → rollout restart |
+| 15 | **AKS deployment** | Helm + kubectl + manifests | `rtgaming` + `observability` namespaces, 3× B2s_v2 nodes |
+| 16 | **Observability** | Prometheus + Grafana + kube-state-metrics | "RTGaming Overview" custom dashboard, 3 alerting rules (pod down / restart / CPU) |
 
 ---
 
-## 🛠 Stack technique
+## 🛠 Tech stack
 
 ### Data & Analytics
-- **Ingestion** : Python 3.11 · IGDB API · SteamSpy API · confluent-kafka
-- **Streaming** : Apache Kafka 3.9 (KRaft) · Apache Spark 3.5 Structured Streaming
-- **Storage** : Azure Data Lake Storage Gen2 (Parquet Snappy)
-- **Warehouse** : Snowflake · dbt-core 1.12 · dbt-snowflake
-- **Serving** : Redis 8 · Neo4j 5 + APOC + Graph Data Science
+- **Ingestion**: Python 3.11 · IGDB API · SteamSpy API · confluent-kafka
+- **Streaming**: Apache Kafka 3.9 (KRaft) · Apache Spark 3.5 Structured Streaming
+- **Storage**: Azure Data Lake Storage Gen2 (Parquet Snappy)
+- **Warehouse**: Snowflake · dbt-core 1.12 · dbt-snowflake
+- **Serving**: Redis 8 · Neo4j 5 + APOC + Graph Data Science
 
 ### Application
-- **Backend** : FastAPI · uvicorn · snowflake-connector-python · neo4j-python-driver
-- **Frontend** : Streamlit · Plotly · pandas · httpx
-- **AI** : LangGraph · langchain-ollama · Ollama (Qwen3:4b local)
+- **Backend**: FastAPI · uvicorn · snowflake-connector-python · neo4j-python-driver
+- **Frontend**: Streamlit · Plotly · pandas · httpx
+- **AI**: LangGraph · langchain-ollama · Ollama (local Qwen3:4b)
 
 ### Orchestration & Ops
-- **Orchestration** : Apache Airflow 3.x (Astro Runtime) · KubernetesExecutor-ready
-- **CI/CD** : GitHub Actions (matrix build, 6 services)
-- **IaC** : Terraform (Azure provider) · Helm 3
-- **K8s** : Azure Kubernetes Service (canadacentral) · kubectl · manifests
+- **Orchestration**: Apache Airflow 3.x (Astro Runtime) · KubernetesExecutor-ready
+- **CI/CD**: GitHub Actions (matrix build, 6 services)
+- **IaC**: Terraform (Azure provider) · Helm 3
+- **K8s**: Azure Kubernetes Service (canadacentral) · kubectl · manifests
 
 ### Observability
-- **Metrics** : Prometheus · kube-state-metrics · node-exporter · prometheus-fastapi-instrumentator
-- **Dashboards** : Grafana (dashboards préinstallés + custom "RTGaming Overview")
-- **Alerting** : Grafana Alerts (3 rules)
+- **Metrics**: Prometheus · kube-state-metrics · node-exporter · prometheus-fastapi-instrumentator
+- **Dashboards**: Grafana (built-in + custom "RTGaming Overview")
+- **Alerting**: Grafana Alerts (3 rules)
 
 ---
 
-## ❌ Ce que je n'ai PAS utilisé (et pourquoi)
+## ❌ What I did NOT use (and why)
 
-Choix délibérés pour rester focalisé sur la stack cloud-native Azure/Snowflake :
+Deliberate choices to stay focused on the Azure/Snowflake cloud-native stack:
 
-| Techno | Pourquoi non |
+| Tech | Why not |
 |---|---|
-| **Elasticsearch / Kibana** | Redondant avec Grafana pour les métriques ; les recherches full-text n'apportent rien de plus que Snowflake pour cet usage |
-| **Google Cloud Platform (GCP)** | Projet 100% Azure pour cohérence (crédits Azure Students) — architecture équivalente portable via GKE/BigQuery |
-| **AWS** | Idem — focus Azure |
-| **Databricks** | Spark self-hosted sur AKS suffit pour la volumétrie du projet (économie ~500€/mois vs Databricks) |
-| **Snowpipe (auto-ingest event-driven)** | Bloqué par restriction AAD étudiante (approbation admin universitaire requise). Contourné par **micro-batch Airflow toutes les 5 min** — équivalent fonctionnel |
-| **Loki** | Grafana natif + Streamlit "System Health" suffisent pour la démo ; Loki serait un ajout futur si volume de logs croît |
+| **Elasticsearch / Kibana** | Redundant with Grafana for metrics; full-text search adds nothing over Snowflake for this use case |
+| **Google Cloud Platform (GCP)** | 100% Azure project for consistency (Azure Students credits) — equivalent architecture is portable via GKE/BigQuery |
+| **AWS** | Same — Azure focus |
+| **Databricks** | Self-hosted Spark on AKS is enough for project volume (~$500/mo savings vs Databricks) |
+| **Snowpipe (event-driven auto-ingest)** | Blocked by student AAD restriction (university admin approval required). Worked around with **Airflow micro-batch every 5 min** — functionally equivalent |
+| **Loki** | Native Grafana + Streamlit "System Health" cover the demo needs; Loki would be a future add-on when log volume grows |
 
 ---
 
-## 📁 Structure du repo
+## 📁 Repo structure
 
 ```
 realtime-gaming-platform/
-├── .github/workflows/         # CI/CD GitHub Actions
+├── .github/workflows/         # GitHub Actions CI/CD
 │   └── deploy.yml
 ├── infra/terraform/           # IaC Azure + Snowflake
 │   ├── azure/                 # AKS + ACR + ADLS + RG
@@ -264,7 +258,7 @@ realtime-gaming-platform/
 │   └── src/
 ├── airflow/                   # Astro project (3 DAGs + include/)
 │   ├── dags/
-│   ├── include/               # code + SQL montés dans les workers
+│   ├── include/               # code + SQL mounted into workers
 │   └── Dockerfile
 ├── observability/             # Grafana dashboards JSON
 │   └── grafana/dashboards/
@@ -277,13 +271,13 @@ realtime-gaming-platform/
 
 ---
 
-## 🎥 Démo pas à pas
+## 🎥 Feature walkthrough
 
-### 1. Ingestion batch (Airflow)
+### 1. Batch ingestion (Airflow)
 
-<!-- ![Airflow](docs/media/airflow-batch.gif) -->
+<!-- ![Airflow batch DAG](docs/media/airflow-batch.gif) -->
 
-DAG `batch_daily` (schedule 3h UTC) :
+The `batch_daily` DAG (schedule 3 AM UTC):
 
 ```
 ingest_igdb ─┐
@@ -291,9 +285,11 @@ ingest_igdb ─┐
 ingest_steamspy ─┘
 ```
 
-Chaque tâche est **idempotente**, avec `execution_timeout` et retry configurés.
+Each task is **idempotent**, with configured `execution_timeout` and retries.
 
-### 2. Streaming continu
+### 2. Continuous streaming
+
+<!-- ![Live streaming page](docs/media/live-streaming.gif) -->
 
 ```
 Simulator (8 events/s) → Kafka → Spark → {Redis, ADLS}
@@ -301,50 +297,56 @@ Simulator (8 events/s) → Kafka → Spark → {Redis, ADLS}
                                         Snowflake RAW/ANALYTICS
 ```
 
-### 3. Dashboard Streamlit
+### 3. Streamlit dashboard
 
-<!-- ![Dashboard](docs/media/dashboard-tour.gif) -->
+<!-- ![Streaming history page](docs/media/streaming-history.gif) -->
 
-10 pages, avec notamment :
+10 pages including:
 
-- **Live Streaming** : KPIs auto-refresh 5s + Top games par topic + anomalies live (Redis)
-- **Streaming History** : time series Snowflake avec granularité **hour / day / week / month / year**
-- **Sentinel AI** : posez une question au LLM local (Qwen3 via Ollama), il appelle l'API et répond en langage naturel
-- **System Health** : alertes Grafana + métriques Prometheus temps réel
+- **Live Streaming**: 5s auto-refresh KPIs + top games per topic + live anomalies (Redis)
+- **Streaming History**: Snowflake time series with **hour / day / week / month / year** granularity
+- **Sentinel AI**: ask a question to the local LLM (Qwen3 via Ollama), it calls the API and answers in natural language
+- **System Health**: real-time Grafana alerts + Prometheus metrics
 
 ### 4. Knowledge Graph
 
-<!-- ![Neo4j](docs/media/neo4j-graph.gif) -->
+<!-- ![Neo4j graph](docs/media/neo4j-graph.gif) -->
 
-Similar-games via cosine similarity + détections d'anomalies (viral, review-bomb, ccu-spike, wishlist-net).
+Similar-games via cosine similarity + anomaly detection (viral, review-bomb, ccu-spike, wishlist-net).
 
 ### 5. Sentinel AI
 
-<!-- ![Sentinel](docs/media/sentinel-ai.gif) -->
+<!-- ![Sentinel AI answer](docs/media/sentinel-ai.gif) -->
 
-Exemple : *« What are the top 3 trending games right now? »* → LangGraph appelle `/trending`, formatte, répond.
+Example: *"What are the top 3 trending games right now?"* → LangGraph calls `/trending`, formats, answers.
 
-### 6. Observabilité Grafana
+### 6. Grafana observability
 
-<!-- ![Grafana](docs/media/grafana-overview.gif) -->
+<!-- ![Grafana overview](docs/media/grafana-overview.gif) -->
 
-Dashboard "RTGaming Overview" + 3 alertes rules configurées.
+Custom "RTGaming Overview" dashboard + 3 configured alerting rules.
+
+### 7. System Health (Streamlit)
+
+<!-- ![System Health page](docs/media/system-health.gif) -->
+
+Unified view of Grafana alerts + live Prometheus metrics, embedded in the same dashboard.
 
 ---
 
-## 🚀 Reproduction locale
+## 🚀 Local reproduction
 
-### Pré-requis
+### Prerequisites
 
 - Docker Desktop
-- Azure CLI + subscription (Students suffit)
+- Azure CLI + subscription (Students tier works)
 - kubectl + Helm 3
 - Terraform ≥ 1.9
-- Python 3.11 + Poetry ou venv
-- Astro CLI (pour Airflow local)
-- Snowflake trial (30 jours gratuits)
+- Python 3.11 + Poetry or venv
+- Astro CLI (for local Airflow)
+- Snowflake trial (30 days free)
 
-### 1. Provisionner Azure
+### 1. Provision Azure
 
 ```bash
 cd infra/terraform/azure
@@ -352,7 +354,7 @@ terraform init
 terraform apply
 ```
 
-### 2. Provisionner Snowflake
+### 2. Provision Snowflake
 
 ```bash
 cd infra/terraform/snowflake
@@ -363,10 +365,10 @@ terraform apply
 ### 3. Build & push images
 
 ```bash
-git push origin main   # CI/CD GitHub Actions build les 6 images en parallèle
+git push origin main   # GitHub Actions CI/CD builds 6 images in parallel
 ```
 
-### 4. Déployer sur AKS
+### 4. Deploy to AKS
 
 ```bash
 az aks get-credentials --resource-group rtgaming-dev-rg --name rtgaming-dev-aks
@@ -388,16 +390,16 @@ helm install prometheus prometheus-community/kube-prometheus-stack \
   -n observability --values k8s/values/prometheus-values.yaml
 ```
 
-### 5. Lancer Airflow local
+### 5. Start local Airflow
 
 ```bash
 cd airflow
 astro dev start
 ```
 
-Ouvre `http://localhost:8080` → login `admin`/`admin`.
+Open `http://localhost:8080` → login `admin`/`admin`.
 
-### 6. Récupérer les URLs publiques
+### 6. Get public URLs
 
 ```bash
 kubectl get svc -n rtgaming rtgaming-dashboard
@@ -406,34 +408,34 @@ kubectl get svc -n observability prometheus-grafana
 
 ---
 
-## ✨ Highlights techniques
+## ✨ Technical highlights
 
-Ce qui distingue ce projet d'un simple tutoriel :
+What sets this project apart from a tutorial:
 
-- **Micro-batch en fallback Snowpipe** — quand la restriction AAD étudiante a bloqué la création du Service Principal Snowflake, j'ai contourné en implémentant un DAG Airflow `*/5 * * * *` qui exécute le COPY INTO. **Latence équivalente (~5 min)**, robustesse identique, portable universellement.
+- **Micro-batch as Snowpipe fallback** — when the student AAD restriction blocked Snowflake Service Principal creation, I implemented an Airflow DAG (`*/5 * * * *`) that runs the COPY INTO. **Equivalent latency (~5 min)**, identical robustness, universally portable.
 
-- **Idempotence sur les COPY** — le script `batch_copy.py` accepte `--date {{ ds }}` et substitue dans le SQL le placeholder `{DATE}` pour ne charger que la partition du jour → **plus de doublons** dans les marts dbt (bug détecté et corrigé via les tests `unique_mart_*`).
+- **Idempotent COPY** — the `batch_copy.py` script accepts `--date {{ ds }}` and substitutes the `{DATE}` placeholder in SQL to load only today's partition → **no more duplicates** in dbt marts (bug detected and fixed via `unique_mart_*` tests).
 
-- **Refactor Python 3.8 vs 3.14** — l'image `apache/spark:3.5.4-python3` ship encore Python 3.8. Le code streaming utilisait `str | None` (syntax 3.10+) → refactor en `Optional[str]` pour compatibilité, appris à la dure.
+- **Python 3.8 vs 3.14 refactor** — the `apache/spark:3.5.4-python3` image still ships Python 3.8. Streaming code used `str | None` (3.10+ syntax) → refactored to `Optional[str]` for compatibility, learned the hard way.
 
-- **Full-refresh dbt sur `mart_games`** — 82 547 duplicates détectés en test dbt → analyse root cause → correction via date-aware COPY → 0 dup au test suivant.
+- **Full-refresh dbt on `mart_games`** — 82,547 duplicates detected in dbt tests → root cause analysis → fixed via date-aware COPY → 0 duplicates on the next test run.
 
-- **Cross-namespace observability** — Streamlit dans `rtgaming` interroge Prometheus dans `observability` via DNS interne (`prometheus-kube-prometheus-prometheus.observability.svc.cluster.local`) sans exposer d'IP publique supplémentaire.
+- **Cross-namespace observability** — Streamlit in `rtgaming` queries Prometheus in `observability` via internal DNS (`prometheus-kube-prometheus-prometheus.observability.svc.cluster.local`) without exposing an additional public IP.
 
-- **CI/CD image resilience** — après plusieurs bugs "wrong image after AKS restart", correction permanente en éditant les manifests (repos `api:latest` vs `rtgaming-api:latest`) + `imagePullPolicy: Always` + suppression des vieux repos ACR.
+- **CI/CD image resilience** — after multiple "wrong image after AKS restart" bugs, permanent fix by editing manifests (`api:latest` vs `rtgaming-api:latest` repos) + `imagePullPolicy: Always` + cleanup of old ACR repos.
 
-- **Streamlit avec état live** — la page "Live Streaming" utilise `st.rerun()` + `time.sleep(refresh)` en boucle avec bypass du cache `@st.cache_data` d'`api_client` pour rester **vraiment temps réel**.
+- **Streamlit with live state** — the "Live Streaming" page uses `st.rerun()` + `time.sleep(refresh)` in a loop, bypassing the `@st.cache_data` cache of `api_client` to stay **truly real-time**.
 
 ---
 
 ## 🗺 Roadmap
 
-- [ ] Loki pour agrégation logs (Streamlit + Airflow)
-- [ ] Alertes Slack via webhook
-- [ ] Data Contracts Snowflake ↔ dbt
-- [ ] Feature Store (Feast) pour ML
-- [ ] Migration Airflow → AKS (helm chart officiel, KubernetesExecutor)
-- [ ] JMX Exporter Kafka → dashboard Grafana consumer lag
+- [ ] Loki for log aggregation (Streamlit + Airflow)
+- [ ] Slack alerts via webhook
+- [ ] Snowflake ↔ dbt data contracts
+- [ ] Feature Store (Feast) for ML
+- [ ] Migrate Airflow → AKS (official Helm chart, KubernetesExecutor)
+- [ ] Kafka JMX Exporter → Grafana consumer lag dashboard
 
 ---
 
@@ -442,11 +444,7 @@ Ce qui distingue ce projet d'un simple tutoriel :
 **Khalifa Seck** — Data Engineer
 
 - 📧 seckhalifaa@gmail.com
-- 💼 [LinkedIn](https://linkedin.com/in/khalifaseck)
+- 💼 [LinkedIn](https://www.linkedin.com/in/khalifa-ababacar-seck-a1632a1a7/)
 - 🐙 [GitHub](https://github.com/KhalifaSeck)
 
 ---
-
-<p align="center">
-  <sub>Built with ❤️ in Sherbrooke, Canada · 2026</sub>
-</p>
