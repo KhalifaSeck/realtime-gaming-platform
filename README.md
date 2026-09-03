@@ -29,18 +29,34 @@
 </p>
 
 <!-- Hero GIF: full dashboard tour (10 pages) -->
-<!-- ![Hero](docs/media/hero-demo.gif) -->
 
 ---
 
-## 🌐 Live Demo
+## 🎥 Live demo
 
-Production environment running on **AKS Canada Central**:
+![Live Streaming — real-time Kafka + Spark + Redis](docs/media/live-streaming.gif)
 
-| Interface | URL | Login |
-|---|---|---|
-| 🎯 **Streamlit Dashboard** (10 pages) | http://4.172.6.246 | — |
-| 📊 **Grafana Observability** | http://20.116.178.122 | `admin` / `rtgaming2026` |
+*Live Streaming page: 8 events/sec from the Kafka simulator flow into Spark Structured Streaming, aggregate into Redis, and stream into the dashboard with 5-second auto-refresh. Top games by revenue, reviews, sessions, and wishlist all update live.*
+
+### What's happening under the hood
+
+The GIF above showcases the end-to-end streaming pipeline:
+
+1. **Kafka producers** emit 4 event types (`purchases`, `reviews`, `sessions`, `wishlist`) at ~8 events/sec
+2. **Spark Structured Streaming** consumes the topics, runs 8 concurrent queries (4 aggregates + 4 raw events)
+3. **Redis** stores 5-minute rolling aggregates (`stat:{topic}:{game_id}` hash keys, 10min TTL)
+4. **ADLS Gen2** persists Parquet snapshots of both aggregates (`raw/streaming/`) and raw events (`raw/streaming_events/`)
+5. **Airflow micro-batch** (`streaming_copy_to_snowflake` every 5min) loads Parquet into Snowflake `RAW.STREAM_*` and `ANALYTICS.STREAM_*_AGG` tables
+6. **FastAPI** exposes `/live/*` (Redis) and `/history/*` (Snowflake) endpoints
+7. **Streamlit** renders the live view with Plotly + `st.rerun()` loop (cache-bypassed for true real-time)
+
+### Other features (not shown in GIF)
+
+- **Streaming History** — Snowflake-backed time series with hour/day/week/month/year granularity
+- **Sentinel AI** — LangGraph agent (Qwen3:4b via Ollama) that answers questions in natural language by calling the FastAPI endpoints as tools
+- **Knowledge Graph** — Neo4j with `SIMILAR_TO`, `PUBLISHED_BY`, `DEVELOPED_BY` relationships, plus 3 anomaly detection queries (viral, review-bomb, ccu-spike)
+- **System Health** — unified Streamlit page showing Grafana alerts, Prometheus metrics, and live pod status
+- **Grafana** — custom "RTGaming Overview" dashboard with 3 alerting rules (pod down, restart storm, node CPU high)
 
 ---
 
@@ -275,7 +291,6 @@ realtime-gaming-platform/
 
 ### 1. Batch ingestion (Airflow)
 
-<!-- ![Airflow batch DAG](docs/media/airflow-batch.gif) -->
 
 The `batch_daily` DAG (schedule 3 AM UTC):
 
@@ -289,7 +304,6 @@ Each task is **idempotent**, with configured `execution_timeout` and retries.
 
 ### 2. Continuous streaming
 
-<!-- ![Live streaming page](docs/media/live-streaming.gif) -->
 
 ```
 Simulator (8 events/s) → Kafka → Spark → {Redis, ADLS}
@@ -299,7 +313,6 @@ Simulator (8 events/s) → Kafka → Spark → {Redis, ADLS}
 
 ### 3. Streamlit dashboard
 
-<!-- ![Streaming history page](docs/media/streaming-history.gif) -->
 
 10 pages including:
 
@@ -310,25 +323,21 @@ Simulator (8 events/s) → Kafka → Spark → {Redis, ADLS}
 
 ### 4. Knowledge Graph
 
-<!-- ![Neo4j graph](docs/media/neo4j-graph.gif) -->
 
 Similar-games via cosine similarity + anomaly detection (viral, review-bomb, ccu-spike, wishlist-net).
 
 ### 5. Sentinel AI
 
-<!-- ![Sentinel AI answer](docs/media/sentinel-ai.gif) -->
 
 Example: *"What are the top 3 trending games right now?"* → LangGraph calls `/trending`, formats, answers.
 
 ### 6. Grafana observability
 
-<!-- ![Grafana overview](docs/media/grafana-overview.gif) -->
 
 Custom "RTGaming Overview" dashboard + 3 configured alerting rules.
 
 ### 7. System Health (Streamlit)
 
-<!-- ![System Health page](docs/media/system-health.gif) -->
 
 Unified view of Grafana alerts + live Prometheus metrics, embedded in the same dashboard.
 
@@ -431,7 +440,6 @@ What sets this project apart from a tutorial:
 ## 🗺 Roadmap
 
 - [ ] Loki for log aggregation (Streamlit + Airflow)
-- [ ] Slack alerts via webhook
 - [ ] Snowflake ↔ dbt data contracts
 - [ ] Feature Store (Feast) for ML
 - [ ] Migrate Airflow → AKS (official Helm chart, KubernetesExecutor)
@@ -439,12 +447,7 @@ What sets this project apart from a tutorial:
 
 ---
 
-## 👤 Contact
+## 📄 Licence
 
-**Khalifa Seck** — Data Engineer
+MIT — voir [LICENSE](LICENSE)
 
-- 📧 seckhalifaa@gmail.com
-- 💼 [LinkedIn](https://www.linkedin.com/in/khalifa-ababacar-seck-a1632a1a7/)
-- 🐙 [GitHub](https://github.com/KhalifaSeck)
-
----
