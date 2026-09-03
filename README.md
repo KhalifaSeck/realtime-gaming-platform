@@ -72,7 +72,6 @@ The GIF above showcases the end-to-end streaming pipeline:
 - [Local reproduction](#-local-reproduction)
 - [Technical highlights](#-technical-highlights)
 - [Roadmap](#-roadmap)
-- [Contact](#-contact)
 
 ---
 
